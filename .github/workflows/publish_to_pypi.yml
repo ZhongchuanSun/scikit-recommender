@@ -4,19 +4,15 @@ on: [push]
 
 jobs:
   build-wheel:
-
     runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        python-version: [3.8]
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.8
 
     - name: Display Python version
       run: |
@@ -26,11 +22,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest twine
-        pip install build
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        python -m pip install flake8 twine
 
-    - name: Lint with flake8
+    - name: Lint with flake8 for sysntax errors
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
