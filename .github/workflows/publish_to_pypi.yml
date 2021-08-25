@@ -5,6 +5,10 @@ on: [push]
 jobs:
   build-wheel:
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        plat: ['x86_64', 'i686']
+
     steps:
     - uses: actions/checkout@v2
 
@@ -15,6 +19,8 @@ jobs:
 
     - name: Display Python version
       run: python -c "import sys; print(sys.version)"
+    - name: Display plat
+      run: echo ${{ matrix.plat }}
 
     - name: Install dependencies
       run: |
@@ -28,18 +34,21 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Build manylinux Python wheels on manylinux2010_i686
+    - name: Build manylinux Python wheels on ${{ matrix.plat }}
+      if: ${{ matrix.plat }} == 'x86_64'
+      run: exit 1
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_i686
       with:
         python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cython numpy'
 
-    - name: Build manylinux Python wheels on manylinux2010_x86_64
-      uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
-      with:
-        python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
-        build-requirements: 'cython numpy'
-
+    - name: Build manylinux Python wheels on ${{ matrix.plat }}
+        if: ${{ matrix.plat }} == 'i686'
+        run: exit 1
+        uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
+        with:
+          python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
+          build-requirements: 'cython numpy'
     - name: Publish wheels to PyPI
       env:
         TWINE_USERNAME: __token__
