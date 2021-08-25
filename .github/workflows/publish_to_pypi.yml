@@ -19,9 +19,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Display Python version
-        run: |
-          # test your matrix by printing the current Python version
-          python -c "import sys; print(sys.version)"
+        run: python -c "import sys; print(sys.version)"
 
     - name: Install dependencies
       run: |
