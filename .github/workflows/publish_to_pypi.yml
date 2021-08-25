@@ -48,4 +48,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         # twine upload dist/*-manylinux*.whl
-        list dist/*-manylinux*.whl
+        ls dist/*-manylinux*.whl
