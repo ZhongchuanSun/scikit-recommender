@@ -115,7 +115,7 @@ def setup_package():
     with open("README.md", "r") as fh:
         long_description = fh.read()
 
-    install_requires = ["Cython==0.29.14"]
+    install_requires = []
 
     metadata = dict(
         name="scikit-recommender",  # Replace with your own username
