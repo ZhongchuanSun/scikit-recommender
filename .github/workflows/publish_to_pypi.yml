@@ -39,8 +39,8 @@ jobs:
     - name: Build wheel
       run: |
         python setup.py bdist_wheel
-        # pip install auditwheel
-        # auditwheel repair dist/*.whl
+        pip install auditwheel
+        auditwheel repair dist/*.whl
 
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
