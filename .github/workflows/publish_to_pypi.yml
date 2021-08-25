@@ -38,7 +38,11 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Build wheel
-      run: python -m build
+      run: |
+        python setup.py bdist_wheel
+        pip install auditwheel
+        auditwheel repair dist/*.whl
+        # python -m build
 
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
