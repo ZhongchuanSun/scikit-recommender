@@ -3,11 +3,8 @@ name: publish-to-pypi
 on: [push]
 
 jobs:
-  build-wheel:
+  build-wheel-i686:
     runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        plat: ['x86_64', 'i686']
 
     steps:
     - uses: actions/checkout@v2
@@ -18,9 +15,9 @@ jobs:
         python-version: 3.8
 
     - name: Display Python version
-      run: python -c "import sys; print(sys.version)"
-    - name: Display plat
-      run: echo ${{ matrix.plat }}
+      run: |
+        # test your matrix by printing the current Python version
+        python -c "import sys; print(sys.version)"
 
     - name: Install dependencies
       run: |
@@ -34,20 +31,52 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Build manylinux Python wheels on ${{ matrix.plat }}
-      if: ${{ matrix.plat }} == 'i686'
+    - name: Build manylinux Python wheels
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_i686
       with:
         python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cython numpy'
+    - name: Publish wheels to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        # twine upload dist/*-manylinux*.whl
+        ls dist/*-manylinux*.whl
 
-    - name: Build manylinux Python wheels on ${{ matrix.plat }}
-      if: ${{ matrix.plat }} == 'x86_64'
+  build-wheel-x86_64:
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Display Python version
+      run: |
+        # test your matrix by printing the current Python version
+        python -c "import sys; print(sys.version)"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 twine
+
+    - name: Lint with flake8 for sysntax errors
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Build manylinux Python wheels
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
       with:
         python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cython numpy'
-
     - name: Publish wheels to PyPI
       env:
         TWINE_USERNAME: __token__
