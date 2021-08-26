@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        plat: ['manylinux1-i686', 'manylinux1-x86_64', 'manylinux2014-i686', 'manylinux2014-x86_64']
+        plat: ['manylinux1_i686', 'manylinux1_x86_64', 'manylinux2014_i686', 'manylinux2014_x86_64']
 
     steps:
     - uses: actions/checkout@v2
