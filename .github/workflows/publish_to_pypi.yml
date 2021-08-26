@@ -3,7 +3,7 @@ name: publish-to-pypi
 on: [push]
 
 jobs:
-  build-wheel-i686:
+  build-wheel:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
@@ -41,7 +41,7 @@ jobs:
         python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cython numpy'
 
-    - name: Build manylinux Python wheels on manylinux2010_i686
+    - name: Build manylinux Python wheels on manylinux2010_x86_64
       if: ${{ matrix.plat == 'x86_64' }}
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
       with:
