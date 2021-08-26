@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        plat: ['manylinux1_i686', 'manylinux1_x86_64', 'manylinux2014_i686', 'manylinux2014_x86_64']
+        plat: ['manylinux1_i686', 'manylinux1_x86_64', 'manylinux2010_i686', 'manylinux2010_x86_64', 'manylinux2014_i686', 'manylinux2014_x86_64']
 
     steps:
     - uses: actions/checkout@v2
@@ -44,6 +44,20 @@ jobs:
     - name: Build Python wheels on manylinux1_x86_64
       if: ${{ matrix.plat == 'manylinux1_x86_64' }}
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux1_x86_64
+      with:
+        python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
+        build-requirements: 'cython numpy'
+
+    - name: Build Python wheels on manylinux2010_i686
+      if: ${{ matrix.plat == 'manylinux2010_i686' }}
+      uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_i686
+      with:
+        python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
+        build-requirements: 'cython numpy'
+
+    - name: Build Python wheels on manylinux2010_x86_64
+      if: ${{ matrix.plat == 'manylinux2010_x86_64' }}
+      uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
       with:
         python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cython numpy'
