@@ -14,6 +14,7 @@ from collections import OrderedDict
 import pandas as pd
 import numpy as np
 import scipy.sparse as sp
+import weakref
 from skrec.common.py_utils import pad_sequences, md5sum
 
 _USER = "user"
@@ -51,6 +52,9 @@ class Interaction(object):
 
     def is_buffer_modified(self):
         return self._buffer_modified_flag
+
+    def reset_buffer_flag(self):
+        self._buffer_modified_flag = False
 
 
 def fetch_data(data_generator):
@@ -202,6 +206,7 @@ class Dataset(object):
         self.num_ratings = 0
         self._md5_summary = ""
         self._load_data(sep, columns)
+        weakref.finalize(self, self._destructor)
 
     @property
     def data_dir(self):
@@ -214,21 +219,25 @@ class Dataset(object):
                 _t_data: Dataset = pickle.load(fin)
             if _t_data._md5_summary == self._raw_summary():
                 self.__dict__ = _t_data.__dict__
+                self.train_data.reset_buffer_flag()
+                self.test_data.reset_buffer_flag()
+                self.valid_data.reset_buffer_flag()
                 return
 
         self._load_from_raw(sep, columns)
         self._md5_summary = self._raw_summary()
+        self._dump_data()
+
+    def _dump_data(self):
+        pkl_file = self._file_prefix + ".pkl"
         with open(pkl_file, 'wb') as fout:
             pickle.dump(self, fout)
 
-    def __del__(self):
-        # if self.train_data.is_buffer_modified() or \
-        #         self.valid_data.is_buffer_modified() or \
-        #         self.test_data.is_buffer_modified():
-        #     pkl_file = self._file_prefix + ".pkl"
-        #     pickle.dump(self, open(pkl_file, 'wb'))
-        # TODO 如何在析构函数中对模型保存?
-        pass
+    def _destructor(self):
+        if self.train_data.is_buffer_modified() or \
+                self.valid_data.is_buffer_modified() or \
+                self.test_data.is_buffer_modified():
+            self._dump_data()
 
     def _raw_summary(self):
         md5summary = md5sum(self._file_prefix+".train", self._file_prefix+".valid", self._file_prefix+".test")
