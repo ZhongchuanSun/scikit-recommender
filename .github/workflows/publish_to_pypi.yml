@@ -70,10 +70,11 @@ jobs:
         # twine upload dist/*-manylinux*.whl
         ls dist/*-manylinux*.whl
 
-  build-wheel-windows:
-    runs-on: windows-2019
+  build-wheel-win-macos:
+    runs-on: @{{ matrix.os }}
     strategy:
       matrix:
+        os: [macos-10.15, windows-2019]
         python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
     - uses: actions/checkout@v2
@@ -101,13 +102,23 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Build Python wheels on Windows Py${{ matrix.python-version }}
+    - name: Build Python wheels on ${{ matrix.os }} Py${{ matrix.python-version }}
       run: python setup.py bdist_wheel
 
-    - name: Publish wheels to PyPI
+    - name: Publish wheels to PyPI (Windows)
+      if: startsWith(matrix.os, 'windows')
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         # twine upload dist/*-win*.whl
         dir dist/*-win*.whl
+
+    - name: Publish wheels to PyPI (MacOS)
+      if: startsWith(matrix.os, 'macos')
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        # twine upload dist/*-win*.whl
+        ls dist/*-win*.whl
