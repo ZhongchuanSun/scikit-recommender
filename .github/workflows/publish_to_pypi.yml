@@ -121,4 +121,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         # twine upload dist/*-win*.whl
-        ls dist/*-win*.whl
+        ls dist/*-macosx*.whl
