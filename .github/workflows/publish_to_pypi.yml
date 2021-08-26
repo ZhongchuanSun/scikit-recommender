@@ -71,7 +71,7 @@ jobs:
         ls dist/*-manylinux*.whl
 
   build-wheel-win-macos:
-    runs-on: @{{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-10.15, windows-2019]
