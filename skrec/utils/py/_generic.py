@@ -1,11 +1,13 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["OrderedDefaultDict", "pad_sequences", "md5sum"]
+__all__ = ["OrderedDefaultDict", "pad_sequences", "md5sum", "slugify"]
 
 import os
 import sys
+import re
 import hashlib
+import unicodedata
 from collections import OrderedDict
 import numpy as np
 
@@ -105,3 +107,23 @@ def md5sum(*args):
             md5_list.append(readable_hash)
     md5_list = md5_list[0] if len(args) == 1 else md5_list
     return md5_list
+
+
+def slugify(filename, max_length: int=255) -> str:
+    """
+    url1: https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
+    url2: https://gist.github.com/wassname/1393c4a57cfcbf03641dbc31886123b8
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    filename = str(filename)
+    filename = unicodedata.normalize('NFKD', filename).encode('ascii', 'ignore').decode('ascii')
+    filename = re.sub(r'[^\w\s-]', '', filename.lower())
+    filename = re.sub(r'[-\s]+', '_', filename).strip('-_')
+    if len(filename) > max_length:
+        print(f"Warning, filename truncated because it was over {max_length}. "
+              f"Filenames may no longer be unique")
+    return filename[:max_length]

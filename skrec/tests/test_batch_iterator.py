@@ -5,7 +5,7 @@ __all__ = []
 
 
 import unittest
-from skrec.common.py_utils import BatchIterator
+from skrec.utils.py import BatchIterator
 
 
 class TestBatchIterator(unittest.TestCase):

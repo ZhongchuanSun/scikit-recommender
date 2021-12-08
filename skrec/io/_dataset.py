@@ -7,15 +7,15 @@ __all__ = ["ImplicitFeedback", "Dataset"]
 import os
 import pickle
 import warnings
-from typing import Dict
+from typing import Dict, Callable
 from copy import deepcopy
 from functools import wraps
 from collections import OrderedDict
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy.sparse as sp
 import weakref
-from skrec.common.py_utils import pad_sequences, md5sum
+from ..utils.py import pad_sequences, md5sum
 
 _USER = "user"
 _ITEM = "item"
@@ -56,8 +56,13 @@ class Interaction(object):
     def reset_buffer_flag(self):
         self._buffer_modified_flag = False
 
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.reset_buffer_flag()  # reset flag after pickle.load()
+
 
 def fetch_data(data_generator):
+    # read from buffer
     @wraps(data_generator)
     def wrapper(self: Interaction, *args, **kwargs):
         _data_name = data_generator.__name__
@@ -188,8 +193,6 @@ class Dataset(object):
         """
 
         self._data_dir = data_dir
-        self.data_name = os.path.split(data_dir)[-1]
-        self._file_prefix = os.path.join(self.data_dir, self.data_name)
 
         # metadata
         self.train_data = ImplicitFeedback()
@@ -204,29 +207,33 @@ class Dataset(object):
         self.num_users = 0
         self.num_items = 0
         self.num_ratings = 0
-        self._md5_summary = ""
+        self._my_md5 = ""
         self._load_data(sep, columns)
         weakref.finalize(self, self._destructor)
 
     @property
+    def data_name(self):
+        return os.path.split(self.data_dir)[-1]
+
+    @property
     def data_dir(self):
         return self._data_dir
+
+    @property
+    def _file_prefix(self):
+        return os.path.join(self.data_dir, self.data_name)
 
     def _load_data(self, sep, columns):
         pkl_file = self._file_prefix + ".pkl"
         if os.path.exists(pkl_file):
             with open(pkl_file, 'rb') as fin:
                 _t_data: Dataset = pickle.load(fin)
-            if _t_data._md5_summary == self._raw_summary():
+            if _t_data._my_md5 == self._raw_md5:
+                _t_data._data_dir = self._data_dir  # keep data path up-to-date
                 self.__dict__ = _t_data.__dict__
-                self.train_data.reset_buffer_flag()
-                self.test_data.reset_buffer_flag()
-                self.valid_data.reset_buffer_flag()
                 return
 
         self._load_from_raw(sep, columns)
-        self._md5_summary = self._raw_summary()
-        self._dump_data()
 
     def _dump_data(self):
         pkl_file = self._file_prefix + ".pkl"
@@ -239,10 +246,32 @@ class Dataset(object):
                 self.test_data.is_buffer_modified():
             self._dump_data()
 
-    def _raw_summary(self):
+    @property
+    def _raw_md5(self):
         md5summary = md5sum(self._file_prefix+".train", self._file_prefix+".valid", self._file_prefix+".test")
         md5summary = "_".join([md5 for md5 in md5summary if md5 is not None])
         return md5summary
+
+    @staticmethod
+    def _read_csv(csv_file, sep, header, names, handle: Callable=lambda x: x):
+        if os.path.isfile(csv_file):
+            csv_data = pd.read_csv(csv_file, sep=sep, header=header, names=names)
+        else:
+            handle(f"'{csv_file}' does not exist.")
+            csv_data = pd.DataFrame()
+        return csv_data
+
+    @staticmethod
+    def _read_map_file(map_file, sep):
+        if os.path.isfile(map_file):
+            maps = pd.read_csv(map_file, sep=sep, header=None).to_numpy()
+            maps = OrderedDict(maps)
+            reverses = OrderedDict([(second, first) for first, second in maps.items()])
+        else:
+            maps = None
+            reverses = None
+            warnings.warn(f"'{map_file}' does not exist.")
+        return maps, reverses
 
     def _load_from_raw(self, sep, columns):
         if columns not in _DColumns:
@@ -252,58 +281,41 @@ class Dataset(object):
         columns = _DColumns[columns]
 
         # load data
-        train_file = self._file_prefix+".train"
-        if os.path.isfile(train_file):
-            _train_data = pd.read_csv(train_file, sep=sep, header=None, names=columns)
-        else:
-            raise FileNotFoundError("%s does not exist." % train_file)
+        def raise_error(err: str): raise FileNotFoundError(err)
+        _train_data = self._read_csv(self._file_prefix + ".train",
+                                     sep=sep, header=None, names=columns,
+                                     handle=raise_error)
+        _valid_data = self._read_csv(self._file_prefix + ".valid",
+                                     sep=sep, header=None, names=columns,
+                                     handle=warnings.warn)
+        _test_data = self._read_csv(self._file_prefix + ".test",
+                                    sep=sep, header=None, names=columns,
+                                    handle=raise_error)
 
-        valid_file = self._file_prefix + ".valid"
-        if os.path.isfile(valid_file):
-            _valid_data = pd.read_csv(valid_file, sep=sep, header=None, names=columns)
-        else:
-            _valid_data = pd.DataFrame()
-            warnings.warn("%s does not exist." % valid_file)
-
-        test_file = self._file_prefix + ".test"
-        if os.path.isfile(test_file):
-            _test_data = pd.read_csv(test_file, sep=sep, header=None, names=columns)
-        else:
-            raise FileNotFoundError("%s does not exist." % test_file)
-
-        user2id_file = self._file_prefix + ".user2id"
-        if os.path.isfile(user2id_file):
-            _user2id = pd.read_csv(user2id_file, sep=sep, header=None).to_numpy()
-            self.user2id = OrderedDict(_user2id)
-            self.id2user = OrderedDict([(idx, user) for user, idx in self.user2id.items()])
-        else:
-            warnings.warn("%s does not exist." % user2id_file)
-
-        item2id_file = self._file_prefix + ".item2id"
-        if os.path.isfile(item2id_file):
-            _item2id = pd.read_csv(item2id_file, sep=sep, header=None).to_numpy()
-            self.item2id = OrderedDict(_item2id)
-            self.id2item = OrderedDict([(idx, item) for item, idx in self.item2id.items()])
-        else:
-            warnings.warn("%s does not exist." % item2id_file)
+        self.user2id, self.id2user = self._read_map_file(self._file_prefix + ".user2id", sep)
+        self.item2id, self.id2item = self._read_map_file(self._file_prefix + ".item2id", sep)
 
         # statistical information
-        data_list = [data for data in [_train_data, _valid_data, _test_data] if not data.empty]
-        all_data = pd.concat(data_list)
-        self.num_users = max(all_data[_USER]) + 1
-        self.num_items = max(all_data[_ITEM]) + 1
-        self.num_ratings = len(all_data)
+        data_info = [(max(data[_USER]), max(data[_ITEM]), len(data))
+                     for data in [_train_data, _valid_data, _test_data] if not data.empty]
+        self.num_users = max([d[0] for d in data_info]) + 1
+        self.num_items = max([d[1] for d in data_info]) + 1
+        self.num_ratings = sum([d[2] for d in data_info])
 
         # convert to to the object of Interaction
         self.train_data = ImplicitFeedback(_train_data, num_users=self.num_users, num_items=self.num_items)
         self.valid_data = ImplicitFeedback(_valid_data, num_users=self.num_users, num_items=self.num_items)
         self.test_data = ImplicitFeedback(_test_data, num_users=self.num_users, num_items=self.num_items)
 
-    def summary(self):
+        self._my_md5 = self._raw_md5
+        self._dump_data()
+
+    @property
+    def statistic_info(self):
         """The statistic of dataset.
 
         Returns:
-            str: The summary of statistic
+            str: The summary of statistic information
         """
         if 0 in {self.num_users, self.num_items, self.num_ratings}:
             return ""

@@ -9,11 +9,11 @@ __all__ = ["PointwiseIterator", "PairwiseIterator",
 from typing import Dict
 from collections import Iterable
 from collections import OrderedDict
-from skrec.common.py_utils import OrderedDefaultDict
-from skrec.common.py_utils import BatchIterator
 import numpy as np
-from reckit import randint_choice
-from skrec.common.py_utils import pad_sequences
+from ..utils.py import OrderedDefaultDict
+from ..utils.py import BatchIterator
+from ..utils.py import randint_choice
+from ..utils.py import pad_sequences
 from ._dataset import ImplicitFeedback
 
 

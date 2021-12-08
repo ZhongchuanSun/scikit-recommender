@@ -1,7 +1,7 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["MetricReport", "Evaluator"]
+__all__ = ["MetricReport", "RankingEvaluator", "MetricReport"]
 
 from typing import Sequence, Dict, Union, Optional, Tuple, List, Iterable
 from collections import OrderedDict
@@ -21,14 +21,14 @@ class MetricReport(object):
         if output_list is True:
             return list_metrics
         else:
-            return '\t'.join([f"{x:.8}".ljust(12) for x in list_metrics])
+            return '\t'.join([f"{m}".ljust(12) for m in list_metrics])
 
     def values(self, output_list=False):
         list_values = list(self._results.values())
         if output_list is True:
             return list_values
         else:
-            return '\t'.join([f"{x:.8}".ljust(12) for x in list_values])
+            return '\t'.join([f"{v:.8f}".ljust(12) for v in list_values])
 
     def items(self):
         return self._results.items()
@@ -46,7 +46,7 @@ _metric2id = {"Precision": 1, "Recall": 2, "MAP": 3, "NDCG": 4, "MRR": 5}
 _id2metric = {value: key for key, value in _metric2id.items()}
 
 
-class Evaluator(object):
+class RankingEvaluator(object):
     """Evaluator for item ranking task.
 
     Evaluation metrics of `Evaluator` are configurable and can
@@ -95,7 +95,7 @@ class Evaluator(object):
         Raises:
              ValueError: If `metric` or one of its element is invalid.
         """
-        super(Evaluator, self).__init__()
+        super(RankingEvaluator, self).__init__()
         if metric is None:
             metric = ["Precision", "Recall", "MAP", "NDCG", "MRR"]
         elif isinstance(metric, str):
@@ -144,7 +144,7 @@ class Evaluator(object):
         metric = '\t'.join(metrics_show)
         return "metrics:\t%s" % metric
 
-    def evaluate(self, model, test_users: Optional[Iterable[int]]=None):
+    def evaluate(self, model, test_users: Optional[Iterable[int]]=None) -> MetricReport:
         """Evaluate `model`.
 
         Args:

@@ -11,6 +11,6 @@ from ._data_iterator import SequentialPairwiseIterator
 from ._data_iterator import UserVecIterator
 from ._data_iterator import ItemVecIterator
 
-from ._config import Config
-
 from ._logger import Logger
+
+from ._movielens import MovieLens100k
