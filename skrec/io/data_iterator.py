@@ -14,7 +14,7 @@ from ..utils.py import OrderedDefaultDict
 from ..utils.py import BatchIterator
 from ..utils.py import randint_choice
 from ..utils.py import pad_sequences
-from ._dataset import ImplicitFeedback
+from .dataset import ImplicitFeedback
 
 
 class _Iterator(object):

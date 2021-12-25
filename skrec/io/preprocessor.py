@@ -7,7 +7,7 @@ import os
 import math
 import pandas as pd
 from ..utils.py import typeassert
-from ._logger import Logger
+from .logger import Logger
 from collections import OrderedDict
 
 

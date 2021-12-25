@@ -1,17 +1,17 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-from ._dataset import Dataset
-from ._dataset import ImplicitFeedback
+from .dataset import Dataset
+from .dataset import ImplicitFeedback
 
-from ._data_iterator import PointwiseIterator
-from ._data_iterator import PairwiseIterator
-from ._data_iterator import SequentialPointwiseIterator
-from ._data_iterator import SequentialPairwiseIterator
-from ._data_iterator import UserVecIterator
-from ._data_iterator import ItemVecIterator
+from .data_iterator import PointwiseIterator
+from .data_iterator import PairwiseIterator
+from .data_iterator import SequentialPointwiseIterator
+from .data_iterator import SequentialPairwiseIterator
+from .data_iterator import UserVecIterator
+from .data_iterator import ItemVecIterator
 
-from ._logger import Logger
+from .logger import Logger
 
-from ._movielens import MovieLens100k
-from ._preprocessor import Preprocessor
+from .movielens import MovieLens100k
+from .preprocessor import Preprocessor

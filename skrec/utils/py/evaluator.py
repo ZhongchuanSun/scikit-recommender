@@ -6,7 +6,7 @@ __all__ = ["MetricReport", "RankingEvaluator", "MetricReport"]
 from typing import Sequence, Dict, Union, Optional, Tuple, List, Iterable
 from collections import OrderedDict
 import numpy as np
-from ._batch_iterator import BatchIterator
+from .batch_iterator import BatchIterator
 from .cython import eval_score_matrix
 
 

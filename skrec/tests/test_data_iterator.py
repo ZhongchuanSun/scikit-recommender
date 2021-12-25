@@ -11,10 +11,23 @@ from skrec.io import (
     UserVecIterator, ItemVecIterator
 )
 from skrec.io import Dataset
+from skrec.io import MovieLens100k, Preprocessor
 
 
 def _load_data():
-    return Dataset("../../dataset/ml-100k_leave_u5_i5", '\t', "UIRT")
+    data_path = MovieLens100k.download_and_extract("./tmp")
+
+    # pre-process and save dataset
+    processor = Preprocessor()
+    processor.load_data(data_path, sep="\t", columns="UIRT")
+    processor.drop_duplicates(keep="last")
+    processor.filter_data(user_min=5, item_min=5)
+    processor.remap_data_id()
+    # data.split_data_by_leave_out(valid=1, test=1)
+    processor.split_data_by_ratio(train=0.7, valid=0.0, test=0.3, by_time=True)
+    data_dir = processor.save_data()
+
+    return Dataset(data_dir, '\t', "UIRT")
 
 
 class TestPointwiseIterator(unittest.TestCase):
