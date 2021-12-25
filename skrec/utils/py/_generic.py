@@ -96,12 +96,11 @@ def md5sum(*args):
 
     Returns: a list of MD5 message
     """
-    md5_list = []
     for filename in args:
         if not os.path.isfile(filename):
-            sys.stderr.write("There is not file named '%s'!" % filename)
-            md5_list.append(None)
-            continue
+            raise FileNotFoundError(filename)
+    md5_list = []
+    for filename in args:
         with open(filename, "rb") as fin:
             readable_hash = hashlib.md5(fin.read()).hexdigest()
             md5_list.append(readable_hash)

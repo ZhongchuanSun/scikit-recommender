@@ -10,7 +10,7 @@ from skrec.utils.py import Config
 
 class TestConfig(unittest.TestCase):
     def test_parse_from_file(self):
-        cfg_file = "_tmp_args.cfg"
+        cfg_file = "./tmp/_tmp_args.cfg"
         with open(cfg_file, "w") as fout:
             fout.write("[test]\n")
             fout.write("echo=2\n")

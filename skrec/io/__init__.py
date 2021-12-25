@@ -14,3 +14,4 @@ from ._data_iterator import ItemVecIterator
 from ._logger import Logger
 
 from ._movielens import MovieLens100k
+from ._preprocessor import Preprocessor

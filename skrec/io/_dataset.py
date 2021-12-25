@@ -248,7 +248,9 @@ class Dataset(object):
 
     @property
     def _raw_md5(self):
-        md5summary = md5sum(self._file_prefix+".train", self._file_prefix+".valid", self._file_prefix+".test")
+        files = [self._file_prefix+postfix for postfix in (".train", ".valid", ".test")
+                 if os.path.isfile(self._file_prefix+postfix)]
+        md5summary = md5sum(*files)
         md5summary = "_".join([md5 for md5 in md5summary if md5 is not None])
         return md5summary
 

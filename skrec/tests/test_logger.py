@@ -10,7 +10,7 @@ from skrec.io import Logger
 
 class TestLogger(unittest.TestCase):
     def test_logger(self):
-        log = Logger('_tmp_scikit-recommender.log')
+        log = Logger('./tmp/_tmp_scikit-recommender.log')
         log.debug('debug')
         log.info('info')
         log.warning('warning')
