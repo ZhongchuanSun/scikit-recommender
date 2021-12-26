@@ -23,7 +23,7 @@ class RunConfig(Config):
                  test_thread=4,
                  **kwargs):
         super(RunConfig, self).__init__(**kwargs)
-        self.Recommender: str = recommender
+        self.recommender: str = recommender
         self.data_dir: str = data_dir
         self.file_column: str = file_column
         self.sep: str = column_sep
