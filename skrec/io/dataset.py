@@ -328,16 +328,16 @@ class Dataset(object):
 
             statistic = ["Dataset statistic information:",
                          "Name: %s" % self.data_name,
-                         "The number of users: %d" % num_users,
-                         "The number of items: %d" % num_items,
-                         "The number of ratings: %d" % num_ratings,
-                         "Average actions of users: %.2f" % (1.0 * num_ratings / num_users),
-                         "Average actions of items: %.2f" % (1.0 * num_ratings / num_items),
-                         "The sparsity of the dataset: %.6f%%" % (sparsity * 100),
+                         f"The number of users: {num_users}",
+                         f"The number of items: {num_items}",
+                         f"The number of ratings: {num_ratings}",
+                         f"Average actions of users: {(1.0 * num_ratings / num_users):.2f}",
+                         f"Average actions of items: {(1.0 * num_ratings / num_items):.2f}",
+                         f"The sparsity of the dataset: {(sparsity * 100):.6f}%%",
                          "",
-                         "The number of training: %d" % len(self.train_data),
-                         "The number of validation: %d" % len(self.valid_data),
-                         "The number of testing: %d" % len(self.test_data)
+                         f"The number of training: {len(self.train_data)}",
+                         f"The number of validation: {len(self.valid_data)}",
+                         f"The number of testing: {len(self.test_data)}"
                          ]
             statistic = "\n".join(statistic)
             return statistic

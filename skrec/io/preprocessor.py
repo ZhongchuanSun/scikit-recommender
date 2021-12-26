@@ -320,15 +320,15 @@ class Preprocessor(object):
 
         # write log file
         logger = Logger(filename+".info")
-        data_info = "\n".join(["%s = %s" % (key, value) for key, value in self._config.items()])
+        data_info = "\n".join([f"{key} = {value}" for key, value in self._config.items()])
         logger.info("\n"+data_info)
-        logger.info("Data statistic:")
-        logger.info("The number of users: %d" % user_num)
-        logger.info("The number of items: %d" % item_num)
-        logger.info("The number of ratings: %d" % rating_num)
-        logger.info("Average actions of users: %.2f" % (1.0*rating_num/user_num))
-        logger.info("Average actions of items: %.2f" % (1.0*rating_num/item_num))
-        logger.info("The sparsity of the dataset: %f%%" % (sparsity*100))
+        logger.info("Dataset statistic information:")
+        logger.info(f"The number of users: {user_num}")
+        logger.info(f"The number of items: {item_num}")
+        logger.info(f"The number of ratings: {rating_num}")
+        logger.info(f"Average actions of users: {(1.0*rating_num/user_num):.2f}")
+        logger.info(f"Average actions of items: {(1.0*rating_num/item_num):.2f}")
+        logger.info(f"The sparsity of the dataset: {(sparsity*100)}%%")
 
         print(f"\nThe processed data has been saved in '{dir_path}'")
         return dir_path
