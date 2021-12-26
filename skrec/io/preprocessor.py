@@ -40,7 +40,7 @@ class Preprocessor(object):
         self._item_min = 0
 
     @typeassert(filename=str, sep=str)
-    def load_data(self, filename, sep=",", columns=None):
+    def load_data(self, filename: str, sep: str=",", columns: str=None):
         """Load data
 
         Args:
@@ -50,10 +50,10 @@ class Preprocessor(object):
 
         """
         if not os.path.isfile(filename):
-            raise FileNotFoundError("There is no file named '%s'." % filename)
+            raise FileNotFoundError(f"There is no file named '{filename}'.")
         if columns not in self._column_dict:
             key_str = ", ".join(self._column_dict.keys())
-            raise ValueError("'columns' must be one of '%s'." % key_str)
+            raise ValueError(f"'columns' must be one of '{key_str}'.")
         self._config["columns"] = columns
 
         self._column_name = self._column_dict[columns]
@@ -68,7 +68,7 @@ class Preprocessor(object):
         self._data_name = os.path.basename(filename).split(".")[0]
         self._dir_path = os.path.dirname(filename)
 
-    def drop_duplicates(self, keep="last"):
+    def drop_duplicates(self, keep: str="last"):
         """Drop duplicate user-item interactions.
 
         Args:
@@ -83,7 +83,7 @@ class Preprocessor(object):
         """
 
         if keep not in {'first', 'last'}:
-            raise ValueError("'keep' must be 'first' or 'last', but '%s'" % keep)
+            raise ValueError(f"'keep' must be 'first' or 'last', but '{keep}'")
         print("dropping duplicate interactions...")
 
         if self._TIME in self._column_name:
@@ -96,7 +96,7 @@ class Preprocessor(object):
         self.all_data.drop_duplicates(subset=[self._USER, self._ITEM], keep=keep, inplace=True)
 
     @typeassert(user_min=int, item_min=int)
-    def filter_data(self, user_min=0, item_min=0):
+    def filter_data(self, user_min: int=0, item_min: int=0):
         """Filter users and items with a few interactions.
 
         Args:
@@ -116,7 +116,7 @@ class Preprocessor(object):
                 break
 
     @typeassert(user_min=int)
-    def filter_user(self, user_min=0):
+    def filter_user(self, user_min: int=0):
         """Filter users with a few interactions.
 
         Args:
@@ -131,7 +131,7 @@ class Preprocessor(object):
                 self.all_data = self.all_data[filtered_idx]
 
     @typeassert(item_min=int)
-    def filter_item(self, item_min=0):
+    def filter_item(self, item_min: int=0):
         """Filter items with a few interactions.
 
         Args:
@@ -175,7 +175,7 @@ class Preprocessor(object):
         self.all_data[self._ITEM] = self.all_data[self._ITEM].map(self.item2id)
 
     @typeassert(train=float, valid=float, test=float)
-    def split_data_by_ratio(self, train=0.7, valid=0.1, test=0.2, by_time=True):
+    def split_data_by_ratio(self, train: float=0.7, valid: float=0.1, test: float=0.2, by_time: bool=True):
         """Split dataset by the given ratios.
 
         The dataset will be split by each user.
@@ -206,7 +206,8 @@ class Preprocessor(object):
 
         self.all_data.sort_values(by=sort_key, inplace=True)
 
-        self._split_manner = "ratio"
+        _by_t = "by_time" if by_time is True else "by_random"
+        self._split_manner = "ratio_" + _by_t
         train_data = []
         valid_data = []
         test_data = []
@@ -231,7 +232,7 @@ class Preprocessor(object):
         self.test_data = pd.concat(test_data, ignore_index=True)
 
     @typeassert(valid=int, test=int)
-    def split_data_by_leave_out(self, valid=1, test=1, by_time=True):
+    def split_data_by_leave_out(self, valid: int=1, test: int=1, by_time: bool=True):
         """Split dataset by leave out certain number items.
 
         The dataset will be split by each user.
@@ -257,7 +258,8 @@ class Preprocessor(object):
 
         self.all_data.sort_values(by=sort_key, inplace=True)
 
-        self._split_manner = "leave"
+        _by_t = "by_time" if by_time is True else "by_random"
+        self._split_manner = "leave_" + _by_t
         train_data = []
         valid_data = []
         test_data = []
@@ -289,7 +291,7 @@ class Preprocessor(object):
         """
         print("saving data to disk...")
         dir_path = save_dir if save_dir is not None else self._dir_path
-        filename = "%s_%s_u%d_i%d" % (self._data_name, self._split_manner, self._user_min, self._item_min)
+        filename = f"{self._data_name}_{self._split_manner}_u{self._user_min}_i{self._item_min}"
         dir_path = os.path.join(dir_path, filename)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -318,8 +320,8 @@ class Preprocessor(object):
 
         # write log file
         logger = Logger(filename+".info")
-        data_info = os.linesep.join(["%s = %s" % (key, value) for key, value in self._config.items()])
-        logger.info(os.linesep+data_info)
+        data_info = "\n".join(["%s = %s" % (key, value) for key, value in self._config.items()])
+        logger.info("\n"+data_info)
         logger.info("Data statistic:")
         logger.info("The number of users: %d" % user_num)
         logger.info("The number of items: %d" % item_num)
