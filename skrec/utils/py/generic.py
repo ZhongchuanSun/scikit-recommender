@@ -120,8 +120,8 @@ def slugify(filename, max_length: int=255) -> str:
     """
     filename = str(filename)
     filename = unicodedata.normalize('NFKD', filename).encode('ascii', 'ignore').decode('ascii')
-    filename = re.sub(r'[^\w\s-]', '', filename.lower())
-    filename = re.sub(r'[-\s]+', '_', filename).strip('-_')
+    filename = re.sub(r'[^\w\s.+=-]', '', filename)
+    filename = re.sub(r'[\s]+', '_', filename).strip('-_')
     if len(filename) > max_length:
         print(f"Warning, filename truncated because it was over {max_length}. "
               f"Filenames may no longer be unique")

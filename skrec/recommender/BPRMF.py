@@ -22,6 +22,7 @@ class BPRMFConfig(Config):
                  n_dim=64,
                  batch_size=1024,
                  epochs=1000,
+                 early_stop=200,
                  **kwargs):
         super(BPRMFConfig, self).__init__(**kwargs)
         self.lr: float = lr
@@ -29,6 +30,7 @@ class BPRMFConfig(Config):
         self.n_dim: int = n_dim
         self.batch_size: int = batch_size
         self.epochs: int = epochs
+        self.early_stop: int = early_stop
 
     def _validate(self):
         assert isinstance(self.n_dim, int) and self.n_dim > 0
@@ -36,6 +38,7 @@ class BPRMFConfig(Config):
         assert isinstance(self.reg, float) and self.reg >= 0
         assert isinstance(self.batch_size, int) and self.batch_size > 0
         assert isinstance(self.epochs, int) and self.epochs >= 0
+        assert isinstance(self.early_stop, int)
 
 
 class _MF(nn.Module):
@@ -90,8 +93,9 @@ class BPRMF(AbstractRecommender):
                                      batch_size=self.config.batch_size,
                                      shuffle=True, drop_last=False)
 
-        self.evaluator.print_metrics()
-        self.logger.info(self.evaluator.print_metrics())
+        self.logger.info("metrics:".ljust(12)+f"\t{self.evaluator.metrics_str}")
+        stop_counter = 0
+        best_result: MetricReport = None
         for epoch in range(self.config.epochs):
             self.mf.train()
             for bat_users, bat_pos_items, bat_neg_items in data_iter:
@@ -113,8 +117,15 @@ class BPRMF(AbstractRecommender):
                 loss.backward()
                 self.optimizer.step()
 
-            result = self.evaluate()
-            self.logger.info(f"epoch {epoch}:\t{result.values()}")
+            cur_result = self.evaluate()
+            self.logger.info(f"epoch {epoch}:".ljust(12)+f"\t{cur_result.values_str}")
+            stop_counter += 1
+            if stop_counter > self.config.early_stop:
+                self.logger.info("early stop")
+            if best_result is None or cur_result["NDCG@10"] >= best_result["NDCG@10"]:
+                best_result = cur_result
+                stop_counter = 0
+        self.logger.info("best:".ljust(12)+f"\t{best_result.values_str}")
 
     def evaluate(self) -> MetricReport:
         self.mf.eval()

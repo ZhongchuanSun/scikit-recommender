@@ -10,6 +10,7 @@ from typing import Union, List
 import numpy as np
 from ..io import Logger, Dataset
 from ..utils.py import Config, slugify
+from ..utils.py import MetricReport
 
 
 class AbstractRecommender(object):
@@ -34,14 +35,17 @@ class AbstractRecommender(object):
         logger.info(f"PID: {os.getpid()}")
         logger.info(f"Model: {self.__class__.__module__}")
 
-        logger.info(f"Data statistic information:\n{dataset.statistic_info}")
+        logger.info(f"\n{dataset.statistic_info}")
         cfg_str = config.to_string('\n')
-        logger.info(f"Hyper-parameters:\n{cfg_str}")
+        logger.info(f"\nHyper-parameters:\n{cfg_str}")
 
         return logger
 
     def fit(self):
         # TODO how to early stop fitting
+        raise NotImplementedError
+
+    def evaluate(self) -> MetricReport:
         raise NotImplementedError
 
     def predict(self, users: Union[List[int], np.ndarray]) -> np.ndarray:

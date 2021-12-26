@@ -326,7 +326,7 @@ class Dataset(object):
             num_ratings = self.num_ratings
             sparsity = 1 - 1.0 * num_ratings / (num_users * num_items)
 
-            statistic = ["Dataset statistics:",
+            statistic = ["Dataset statistic information:",
                          "Name: %s" % self.data_name,
                          "The number of users: %d" % num_users,
                          "The number of items: %d" % num_items,

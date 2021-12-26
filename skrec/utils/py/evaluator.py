@@ -16,19 +16,19 @@ class MetricReport(object):
                                             f"are not equal ({len(metrics)}!={len(values)})."
         self._results = OrderedDict(zip(metrics, values))
 
-    def metrics(self, output_list=False):
-        list_metrics = list(self._results.keys())
-        if output_list is True:
-            return list_metrics
-        else:
-            return '\t'.join([f"{m}".ljust(12) for m in list_metrics])
+    def metrics(self):
+        return self._results.keys()
 
-    def values(self, output_list=False):
-        list_values = list(self._results.values())
-        if output_list is True:
-            return list_values
-        else:
-            return '\t'.join([f"{v:.8f}".ljust(12) for v in list_values])
+    @property
+    def metrics_str(self) -> str:
+        return '\t'.join([f"{m}".ljust(12) for m in self.metrics()])
+
+    def values(self):
+        return self._results.values()
+
+    @property
+    def values_str(self) -> str:
+        return '\t'.join([f"{v:.8f}".ljust(12) for v in self.values()])
 
     def items(self):
         return self._results.items()
@@ -132,17 +132,19 @@ class RankingEvaluator(object):
         assert len(user_test_dict) > 0, "'user_test_dict' can be empty."
         self.user_pos_test = user_test_dict
 
-    def print_metrics(self):
+    @property
+    def metrics_list(self) -> List[str]:
+        return [f"{_id2metric[mid]}@{str(k)}" for mid in self.metrics for k in self.top_show]
+
+    @property
+    def metrics_str(self) -> str:
         """Get all metrics information.
 
         Returns:
             str: A string consist of all metrics information, such as
                 `"Precision@10    Precision@20    NDCG@10    NDCG@20"`.
         """
-        metrics_show = ['\t'.join([("%s@" % _id2metric[metric] + str(k)).ljust(12) for k in self.top_show])
-                        for metric in self.metrics]
-        metric = '\t'.join(metrics_show)
-        return "metrics:\t%s" % metric
+        return "\t".join([metric.ljust(12) for metric in self.metrics_list])
 
     def evaluate(self, model, test_users: Optional[Iterable[int]]=None) -> MetricReport:
         """Evaluate `model`.
@@ -193,5 +195,4 @@ class RankingEvaluator(object):
         final_results = final_results[:, self.top_show - 1]
 
         final_results = np.reshape(final_results, newshape=[-1])
-        all_metric = [f"{_id2metric[mid]}@{str(k)}" for k in self.top_show for mid in self.metrics]
-        return MetricReport(all_metric, final_results)
+        return MetricReport(self.metrics_list, final_results)
