@@ -62,4 +62,4 @@ Then, you can use `skrec` in current directory.
 
 ## Usage
 
-You can find examples in [examples/tutorial.py](./examples/tutorial.py).
+You can find examples in [tutorial.py](./tutorial.py).
