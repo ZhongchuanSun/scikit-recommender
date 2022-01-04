@@ -87,9 +87,10 @@ def import_model_and_config(model_name: str):
 
 
 def main():
+    cfg_file = "./skrec.ini"
     # read config
     run_config = RunConfig()
-    run_config.parse_args_from_ini("skrec.ini", "skrec")  # parse args from file and overwrite the default values
+    run_config.parse_args_from_ini(cfg_file, "skrec")  # parse args from file and overwrite the default values
     run_config.parse_args_from_cmd()  # parse args from cmd and overwrite the previous values
     model_name = run_config.recommender
 
@@ -97,7 +98,7 @@ def main():
 
     model_config: Config = ModelConfig()
     # parse args from file and overwrite the default values
-    model_config.parse_args_from_ini(os.path.join("config", f"{model_name}.ini"), model_name)
+    model_config.parse_args_from_ini(cfg_file, model_name)
     model_config.parse_args_from_cmd()  # parse args from cmd and overwrite the previous values
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)
