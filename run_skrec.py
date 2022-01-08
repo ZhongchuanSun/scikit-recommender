@@ -13,7 +13,7 @@ class RunConfig(Config):
                  recommender="BPRMF",
                  data_dir="",
                  file_column="UIRT", column_sep='\t',
-                 gpu_id=0, gpu_mem=0.99,
+                 gpu_id=0,
                  metric=("Precision", "Recall", "MAP", "NDCG", "MRR"),
                  top_k=(10, 20, 30, 40, 50, 100),
                  test_batch_size=64,
@@ -26,7 +26,6 @@ class RunConfig(Config):
         self.file_column: str = file_column
         self.sep: str = column_sep
         self.gpu_id = gpu_id
-        self.gpu_mem = gpu_mem
         self.metric: Union[None, str, Tuple[str], List[str]] = metric
         self.top_k: Union[int, List[int], Tuple[int]] = top_k
         self.test_batch_size: int = test_batch_size
