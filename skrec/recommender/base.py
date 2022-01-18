@@ -23,7 +23,7 @@ class AbstractRecommender(object):
         data_name = dataset.data_name
 
         param_str = f"{data_name}_{model_name}_{config.to_string('_')}"
-        param_str = slugify(param_str, max_length=255 - 28)
+        param_str = slugify(param_str, max_length=255 - 100)
         # run_id: data_name, model_name, hyper-parameters, timestamp
         run_id = f"{param_str}_{timestamp:.8f}"
 

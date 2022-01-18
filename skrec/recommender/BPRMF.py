@@ -127,6 +127,7 @@ class BPRMF(AbstractRecommender):
             stop_counter += 1
             if stop_counter > self.config.early_stop:
                 self.logger.info("early stop")
+                break
             if best_result is None or cur_result["NDCG@10"] >= best_result["NDCG@10"]:
                 best_result = cur_result
                 stop_counter = 0

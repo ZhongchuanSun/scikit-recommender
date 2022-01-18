@@ -122,7 +122,8 @@ class BERT4Rec(AbstractRecommender):
                                           type_vocab_size=2,
                                           initializer_range=config.init_range)
         timestamp = time.time()
-        checkpoint_dir = os.path.join("ckpt_dir", "%s_%s" % (self.dataset.data_name, timestamp))
+        checkpoint_dir = os.path.join(self.dataset.data_dir, f"_{self.__class__.__name__}_ckpt_dir")
+        checkpoint_dir = os.path.join(checkpoint_dir, f"{timestamp}")
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
