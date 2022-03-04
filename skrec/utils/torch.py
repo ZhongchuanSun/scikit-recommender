@@ -1,8 +1,9 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["inner_product", "euclidean_distance", "l2_distance",
-           "bpr_loss", "l2_loss"]
+__all__ = ["inner_product", "euclidean_distance",
+           "l2_distance", "bpr_loss", "l2_loss",
+           "sp_mat_to_sp_tensor"]
 
 import numpy as np
 import scipy.sparse as sp
@@ -29,7 +30,7 @@ def sp_mat_to_sp_tensor(sp_mat: sp.spmatrix) -> Tensor:
     return torch.sparse_coo_tensor(indices, coo.data, coo.shape).coalesce()
 
 
-def bpr_loss(y_pos: Tensor, y_neg: Tensor):
+def bpr_loss(y_pos: Tensor, y_neg: Tensor) -> Tensor:
     return -F.logsigmoid(y_pos - y_neg)
 
 
