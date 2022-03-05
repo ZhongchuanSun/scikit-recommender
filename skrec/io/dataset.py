@@ -292,7 +292,12 @@ class Dataset(object):
         _test_data = self._read_csv(self._file_prefix + ".test",
                                     sep=sep, header=None, names=columns,
                                     handle=raise_error)
-
+        if _train_data.isnull().values.any():
+            warnings.warn(f"'Training data has None value, please check the file or the separator.")
+        if _valid_data.isnull().values.any():
+            warnings.warn(f"'Validation data has None value, please check the file or the separator.")
+        if _test_data.isnull().values.any():
+            warnings.warn(f"'Test data has None value, please check the file or the separator.")
         self.user2id, self.id2user = self._read_map_file(self._file_prefix + ".user2id", sep)
         self.item2id, self.id2item = self._read_map_file(self._file_prefix + ".item2id", sep)
 
