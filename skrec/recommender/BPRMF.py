@@ -15,7 +15,7 @@ from functools import partial
 from ..utils.py import Config
 from ..io import Dataset
 from .base import AbstractRecommender
-from ..utils.torch import inner_product, bpr_loss, l2_loss
+from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..utils.py import RankingEvaluator, MetricReport
 from ..io import PairwiseIterator
 
@@ -61,8 +61,8 @@ class _MF(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        init = partial(nn.init.normal_, mean=0.0, std=0.01)
-        zero_init = nn.init.zeros_
+        init = get_initializer("normal")
+        zero_init = get_initializer("zeros")
 
         init(self.user_embeddings.weight)
         init(self.item_embeddings.weight)

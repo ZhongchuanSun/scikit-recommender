@@ -3,13 +3,16 @@ __email__ = "zhongchuansun@foxmail.com"
 
 __all__ = ["inner_product", "euclidean_distance",
            "l2_distance", "bpr_loss", "l2_loss",
-           "sp_mat_to_sp_tensor"]
+           "sp_mat_to_sp_tensor", "get_initializer"]
 
 import numpy as np
 import scipy.sparse as sp
 import torch
 from torch import Tensor
 import torch.nn.functional as F
+from torch import nn
+from functools import partial
+from collections import OrderedDict
 
 
 def inner_product(a: Tensor, b: Tensor, dim: int=-1) -> Tensor:
@@ -43,3 +46,40 @@ def l2_loss(*weights):
 
     """
     return 0.5 * sum([torch.sum(torch.pow(w, 2)) for w in weights])
+
+
+def truncated_normal_(tensor, mean=0.0, std=1.0):
+    # https://discuss.pytorch.org/t/implementing-truncated-normal-initializer/4778/16
+    size = tensor.shape
+    tmp = tensor.new_empty(size + (4,)).normal_(mean=0, std=1)
+    valid = (tmp < 2) & (tmp > -2)
+    ind = valid.max(-1, keepdim=True)[1]
+    tensor.data.copy_(tmp.gather(-1, ind).squeeze(-1))
+    tensor.data.mul_(std).add_(mean)
+    return tensor
+
+
+class InitArg(object):
+    MEAN = 0.0
+    STDDEV = 0.01
+    MIN_VAL = -0.05
+    MAX_VAL = 0.05
+
+
+_initializers = OrderedDict()
+_initializers["normal"] = partial(nn.init.normal_, mean=InitArg.MEAN, std=InitArg.STDDEV)
+_initializers["truncated_normal"] = partial(truncated_normal_, mean=InitArg.MEAN, std=InitArg.STDDEV)
+_initializers["uniform"] = partial(nn.init.uniform_, a=InitArg.MIN_VAL, b=InitArg.MAX_VAL)
+_initializers["he_normal"] = nn.init.kaiming_normal_
+_initializers["he_uniform"] = nn.init.kaiming_uniform_
+_initializers["xavier_normal"] = nn.init.xavier_normal_
+_initializers["xavier_uniform"] = nn.init.xavier_uniform_
+_initializers["zeros"] = nn.init.zeros_
+_initializers["ones"] = nn.init.ones_
+
+
+def get_initializer(init_method: str):
+    if init_method not in _initializers:
+        init_list = ', '.join(_initializers.keys())
+        raise ValueError(f"'init_method' is invalid, and must be one of '{init_list}'")
+    return _initializers[init_method]

@@ -15,7 +15,7 @@ import torch.sparse as torch_sp
 import torch.nn as nn
 import torch.nn.functional as F
 from .base import AbstractRecommender
-from ..utils.torch import inner_product, bpr_loss, l2_loss
+from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..utils.py import RankingEvaluator, MetricReport
 from ..io import PairwiseIterator, Dataset
 import numpy as np
@@ -74,7 +74,7 @@ class _LightGCN(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        init = nn.init.xavier_uniform_
+        init = get_initializer("xavier_uniform")
         init(self.user_embeddings.weight)
         init(self.item_embeddings.weight)
 
