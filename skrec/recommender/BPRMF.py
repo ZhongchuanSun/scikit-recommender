@@ -36,6 +36,7 @@ class BPRMFConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
+        self._validate()
 
     def _validate(self):
         assert isinstance(self.n_dim, int) and self.n_dim > 0

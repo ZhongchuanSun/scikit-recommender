@@ -81,3 +81,4 @@ You can find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/sciki
 | AOBPR       | C/Cython          | [Steffen Rendle et al., Improving Pairwise Learning for Item Recommendation from Implicit Feedback, WSDM 2014.](https://dl.acm.org/doi/10.1145/2556195.2556248) |
 | BERT4Rec    | TensorFlow (1.14) | [Fei Sun et al., BERT4Rec: Sequential Recommendation with Bidirectional Encoder Representations from Transformer, CIKM 2019](https://dl.acm.org/doi/abs/10.1145/3357384.3357895) |
 | LightGCN    | PyTorch           | [Xiangnan He et al., LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation, SIGIR 2020.](https://dl.acm.org/doi/10.1145/3397271.3401063)|
+| SASRec      | TensorFlow (1.14) | [Wangcheng Kang et al., Self-Attentive Sequential Recommendation, ICDM 2018.](https://ieeexplore.ieee.org/abstract/document/8594844) |

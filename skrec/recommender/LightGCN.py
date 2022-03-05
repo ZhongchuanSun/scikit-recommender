@@ -45,6 +45,7 @@ class LightGCNConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
+        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0

@@ -34,6 +34,7 @@ class AOBPRConfig(Config):
         self.alpha: int = alpha
         self.epochs: int = epochs
         self.early_stop: int = early_stop
+        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0

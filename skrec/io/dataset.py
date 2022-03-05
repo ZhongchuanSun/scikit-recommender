@@ -152,7 +152,6 @@ class ImplicitFeedback(Interaction):
 
         return item_dict
 
-    @fetch_data
     def to_truncated_seq_dict(self, max_len: int, pad_value: int=0,
                               padding='pre', truncating='pre') -> Dict[int, np.ndarray]:
         user_seq_dict = self.to_user_dict_by_time()
