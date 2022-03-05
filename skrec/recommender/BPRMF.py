@@ -11,7 +11,6 @@ __all__ = ["BPRMFConfig", "BPRMF"]
 import torch
 import torch.nn as nn
 import numpy as np
-from functools import partial
 from ..utils.py import Config
 from ..io import Dataset
 from .base import AbstractRecommender
@@ -39,9 +38,9 @@ class BPRMFConfig(Config):
         self._validate()
 
     def _validate(self):
-        assert isinstance(self.n_dim, int) and self.n_dim > 0
         assert isinstance(self.lr, float) and self.lr > 0
         assert isinstance(self.reg, float) and self.reg >= 0
+        assert isinstance(self.n_dim, int) and self.n_dim > 0
         assert isinstance(self.batch_size, int) and self.batch_size > 0
         assert isinstance(self.epochs, int) and self.epochs >= 0
         assert isinstance(self.early_stop, int)
