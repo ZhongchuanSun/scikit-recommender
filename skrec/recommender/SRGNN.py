@@ -32,7 +32,7 @@ class SRGNNConfig(Config):
                  max_seq_len=200,
                  batch_size=256,
                  epochs=500,
-                 early_stop=100,
+                 early_stop=50,
                  **kwargs):
         super(SRGNNConfig, self).__init__(**kwargs)
         self.lr: float = lr
