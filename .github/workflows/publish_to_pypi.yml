@@ -1,6 +1,8 @@
 name: publish-to-pypi
 
-on: [push]
+on:
+  release:
+    types: [published]
 
 jobs:
   build-wheel-manylinux:
