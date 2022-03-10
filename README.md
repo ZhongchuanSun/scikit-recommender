@@ -11,67 +11,66 @@ Scikit-Recommender is an open source library for researchers of recommender syst
 - Parse arguments from command line and ini-style files
 - Diverse data preprocessing
 - Fast negative sampling
-- Fast model evaluating
-- Convenient records logging
+- Fast model evaluation
+- Convenient record logging
 - Flexible batch data iterator
 
-## Install Scikit-Recommender
+## Installation
+<!-- ## Install Scikit-Recommender -->
 
 You have three ways to use Scikit-Recommender:
 
 1. Install from PyPI
-2. Build and install from sources
-3. Run without installation
+2. Install from Source
+3. Run without Installation
 
 ### Install from PyPI
 
-Binary installers are available at the [Python package index](https://pypi.org/project/scikit-recommender/).
+Binary installers are available at the [Python package index](https://pypi.org/project/scikit-recommender/) and you can install the package from pip.
 
 ```sh
 # PyPI
 pip install scikit-recommender
 ```
 
-### Build and install from sources
+### Install from Source
 
-#### First, build wheel from sources
+Installing from source requires Cython and the current code works well with the version 0.29.20.
 
 To build scikit-recommender from source you need Cython:
 
 ```sh
-pip install cython
+pip install cython==0.29.20
 ```
 
-Then, in the scikit-recommender directory, execute:
+Then, the scikit-recommender can be installed by executing:
 
 ```sh
-python setup.py bdist_wheel
+git clone https://github.com/ZhongchuanSun/scikit-recommender.git
+cd scikit-recommender
+python setup.py install
 ```
 
-Now, you can find a `scikit-recommender*.whl` file in `./dist/`
+### Run without Installation
 
-#### Second, install the wheel
-
-Then, install it:
-
-```sh
-pip install ./dist/scikit-recommender*.whl
-```
-
-### Run without installation
-
-Alternatively, You can directly compile the sources in the current directory without installation.
-In the scikit-recommender directory, execute:
+Alternatively, You can also run the sources without installation.
+Please compile the cython codes before running:
 
 ```sh
+git clone https://github.com/ZhongchuanSun/scikit-recommender.git
+cd scikit-recommender
 python setup.py build_ext --inplace
 ```
 
-Then, you can use `skrec` in current directory.
-
 ## Usage
 
-You can find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/scikit-recommender/blob/master/tutorial.ipynb) and [run_skrec.py](https://github.com/ZhongchuanSun/scikit-recommender/blob/master/run_skrec.py).
+After installing or compiling this package, now you can run the [run_skrec.py]([./run_skrec.py](https://github.com/ZhongchuanSun/scikit-recommender/blob/master/run_skrec.py)):
+
+```sh
+python run_skrec.py
+```
+
+You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/scikit-recommender/blob/master/tutorial.ipynb).
 
 ## Models
 
