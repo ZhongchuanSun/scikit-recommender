@@ -29,7 +29,6 @@ You have three ways to use Scikit-Recommender:
 Binary installers are available at the [Python package index](https://pypi.org/project/scikit-recommender/) and you can install the package from pip.
 
 ```sh
-# PyPI
 pip install scikit-recommender
 ```
 
@@ -89,3 +88,4 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 | [GRU4Rec](skrec/recommender/GRU4Rec.py)               | TensorFlow (1.14) | [Balázs Hidasi et al., Session-based Recommendations with Recurrent Neural Networks.](https://arxiv.org/abs/1511.06939) | ICLR 2016 |
 | [GRU4RecPlus](skrec/recommender/GRU4RecPlus.py)       | TensorFlow (1.14) | [Balázs Hidasi et al., Recurrent Neural Networks with Top-k Gains for Session-based Recommendations.](https://dl.acm.org/doi/10.1145/3269206.3271761) | CIKM 2018 |
 | [Caser](skrec/recommender/Caser.py)                   | PyTorch           |[Jiaxi Tang et al., Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding.](https://dl.acm.org/doi/10.1145/3159652.3159656) | WSDM 2018 |
+| [CML](skrec/recommender/CML.py)                       | TensorFlow (1.14) | [Cheng-Kang Hsieh et al., Collaborative Metric Learning.](https://dl.acm.org/doi/10.1145/3038912.3052639) | WWW 2017 |
