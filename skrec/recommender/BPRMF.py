@@ -11,11 +11,11 @@ __all__ = ["BPRMFConfig", "BPRMF"]
 import torch
 import torch.nn as nn
 import numpy as np
+from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
-from .base import AbstractRecommender
-from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..utils.py import RankingEvaluator, MetricReport
+from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..io import PairwiseIterator
 
 
