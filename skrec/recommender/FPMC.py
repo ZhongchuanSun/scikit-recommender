@@ -95,7 +95,7 @@ class FPMC(AbstractRecommender):
         self.evaluator = evaluator
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
-        self.user_pos_dict = self.dataset.train_data.to_user_dict(by_time=True)
+        self.user_pos_dict = self.dataset.train_data.to_user_dict_by_time()
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.fpmc = _FPMC(self.num_users, self.num_items, config.embed_size).to(self.device)
