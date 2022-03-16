@@ -3,6 +3,7 @@ __email__ = "zhongchuansun@foxmail.com"
 
 __all__ = ["inner_product", "euclidean_distance",
            "l2_distance", "bpr_loss", "l2_loss",
+           "sigmoid_cross_entropy",
            "sp_mat_to_sp_tensor", "get_initializer"]
 
 import numpy as np
@@ -83,3 +84,7 @@ def get_initializer(init_method: str):
         init_list = ', '.join(_initializers.keys())
         raise ValueError(f"'init_method' is invalid, and must be one of '{init_list}'")
     return _initializers[init_method]
+
+
+def sigmoid_cross_entropy(y_pre, y_true):
+    return F.binary_cross_entropy_with_logits(input=y_pre, target=y_true, reduction="none")

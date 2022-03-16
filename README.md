@@ -88,3 +88,4 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 | [Pop](skrec/recommender/Pop.py)                       | Python            | Make recommendations based on item popularity. |
 | [GRU4Rec](skrec/recommender/GRU4Rec.py)               | TensorFlow (1.14) | [Balázs Hidasi et al., Session-based Recommendations with Recurrent Neural Networks, ICLR 2016.](https://arxiv.org/abs/1511.06939) |
 | [GRU4RecPlus](skrec/recommender/GRU4RecPlus.py)       | TensorFlow (1.14) | [Balázs Hidasi et al., Recurrent Neural Networks with Top-k Gains for Session-based Recommendations, CIKM 2018.](https://dl.acm.org/doi/10.1145/3269206.3271761) |
+| [Caser](skrec/recommender/Caser.py)                   | PyTorch           |[Jiaxi Tang et al., Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding, WSDM 2018.](https://dl.acm.org/doi/10.1145/3159652.3159656) |
