@@ -1,6 +1,6 @@
 """
-Paper: Session-based Recommendations with Recurrent Neural Networks
-Author: Balázs Hidasi, Alexandros Karatzoglou, Linas Baltrunas, and Domonkos Tikk
+Paper: Recurrent Neural Networks with Top-k Gains for Session-based Recommendations
+Author: Balázs Hidasi, and Alexandros Karatzoglou
 Reference: https://github.com/hidasib/GRU4Rec
            https://github.com/Songweiping/GRU4Rec_TensorFlow
 """
@@ -8,7 +8,8 @@ Reference: https://github.com/hidasib/GRU4Rec
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["GRU4RecConfig", "GRU4Rec"]
+__all__ = ["GRU4RecPlusConfig", "GRU4RecPlus"]
+
 
 import numpy as np
 import tensorflow as tf
@@ -17,29 +18,35 @@ from .base import AbstractRecommender
 from ..utils.py import RankingEvaluator, MetricReport
 from ..io import Dataset
 from ..utils.py import Config
-from ..utils.tf1x import bpr_loss, l2_loss
+from ..utils.tf1x import l2_loss
 
 
-class GRU4RecConfig(Config):
+class GRU4RecPlusConfig(Config):
     def __init__(self,
                  lr=0.001,
                  reg=0.0,
+                 bpr_reg=1.0,
                  layers=[64],
                  batch_size=128,
-                 loss="top1",
+                 loss="bpr_max",
                  hidden_act="tanh",
                  final_act="linear",
+                 n_sample=2048,
+                 sample_alpha=0.75,
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(GRU4RecConfig, self).__init__(**kwargs)
+        super(GRU4RecPlusConfig, self).__init__(**kwargs)
         self.lr: float = lr
         self.reg: float = reg
+        self.bpr_reg: float = bpr_reg
         self.layers: List[int] = layers
         self.batch_size: int = batch_size
         self.loss: str = loss
         self.hidden_act: str = hidden_act
         self.final_act: str = final_act
+        self.n_sample: int = n_sample
+        self.sample_alpha: float = sample_alpha
         self.epochs: int = epochs
         self.early_stop: int = early_stop
         self._validate()
@@ -47,18 +54,21 @@ class GRU4RecConfig(Config):
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
         assert isinstance(self.reg, float) and self.reg >= 0
+        assert isinstance(self.bpr_reg, float) and self.bpr_reg >= 0
         assert isinstance(self.layers, list)
         assert isinstance(self.batch_size, int) and self.batch_size > 0
-        assert isinstance(self.loss, str) and self.loss in {"top1", "bpr"}
+        assert isinstance(self.loss, str) and self.loss in {"top1_max", "bpr_max"}
         assert isinstance(self.hidden_act, str) and self.hidden_act in {"relu", "tanh"}
         assert isinstance(self.final_act, str) and self.final_act in {"linear", "relu", "leaky_relu"}
+        assert isinstance(self.n_sample, int) and self.n_sample >= 0
+        assert isinstance(self.sample_alpha, float) and 0 < self.sample_alpha <= 1
         assert isinstance(self.epochs, int) and self.epochs >= 0
         assert isinstance(self.early_stop, int)
 
 
-class GRU4Rec(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: GRU4RecConfig, evaluator: RankingEvaluator):
-        super(GRU4Rec, self).__init__(dataset, config)
+class GRU4RecPlus(AbstractRecommender):
+    def __init__(self, dataset: Dataset, config: GRU4RecPlusConfig, evaluator: RankingEvaluator):
+        super(GRU4RecPlus, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset
         self.evaluator = evaluator
@@ -80,17 +90,22 @@ class GRU4Rec(AbstractRecommender):
         else:
             raise ValueError("There is not final_act named '%s'." % config.final_act)
 
-        if config.loss == "bpr":
-            self.loss_fun = self._bpr_loss
-        elif config.loss == "top1":
-            self.loss_fun = self._top1_loss
+        if config.loss == "bpr_max":
+            self.loss_fun = self._bpr_max_loss
+        elif config.loss == "top1_max":
+            self.loss_fun = self._top1_max_loss
         else:
             raise ValueError("There is not loss named '%s'." % config.loss)
 
         self.users_num, self.items_num = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict_by_time()
-
         self.data_ui, self.offset_idx = self._init_data()
+
+        # for sampling negative items
+        _, pop = np.unique(self.data_ui[:, 1], return_counts=True)
+        pop = np.power(pop, self.config.sample_alpha)
+        pop_cumsum = np.cumsum(pop)
+        self.pop_cumsum = pop_cumsum / pop_cumsum[-1]
 
         self._build_model()
         tf_config = tf.ConfigProto()  # allow_soft_placement=False, log_device_placement=True
@@ -100,6 +115,7 @@ class GRU4Rec(AbstractRecommender):
 
     def _init_data(self):
         data_ui = self.dataset.train_data.to_user_item_pairs_by_time()
+
         _, idx = np.unique(data_ui[:, 0], return_index=True)
         offset_idx = np.zeros(len(idx)+1, dtype=np.int32)
         offset_idx[:-1] = idx
@@ -109,7 +125,7 @@ class GRU4Rec(AbstractRecommender):
 
     def _create_variable(self):
         self.X_ph = tf.placeholder(tf.int32, [self.config.batch_size], name='input')
-        self.Y_ph = tf.placeholder(tf.int32, [self.config.batch_size], name='output')
+        self.Y_ph = tf.placeholder(tf.int32, [self.config.batch_size+self.config.n_sample], name='output')
         self.state_ph = [tf.placeholder(tf.float32, [self.config.batch_size, n_unit], name='layer_%d_state' % idx)
                          for idx, n_unit in enumerate(self.config.layers)]
 
@@ -120,21 +136,36 @@ class GRU4Rec(AbstractRecommender):
         self.item_embeddings = tf.Variable(init, dtype=tf.float32, name="item_embeddings")
         self.item_biases = tf.Variable(tf.zeros([self.items_num]), dtype=tf.float32, name="item_biases")
 
-    def _bpr_loss(self, logits):
+    def _softmax_neg(self, logits):
         # logits: (b, size_y)
-        pos_logits = tf.matrix_diag_part(logits)  # (b,)
-        pos_logits = tf.reshape(pos_logits, shape=[-1, 1])  # (b, 1)
-        loss = tf.reduce_mean(bpr_loss(pos_logits, logits))
-        return loss
+        hm = 1.0 - tf.eye(tf.shape(logits)[0], tf.shape(logits)[1])
+        logits = logits * hm
+        logits = logits - tf.reduce_max(logits, axis=1, keep_dims=True)
+        e_x = tf.exp(logits) * hm  # (b, size_y)
+        e_x = e_x / tf.reduce_sum(e_x, axis=1, keep_dims=True)
+        return e_x  # (b, size_y)
 
-    def _top1_loss(self, logits):
+    def _bpr_max_loss(self, logits):
         # logits: (b, size_y)
+        softmax_scores = self._softmax_neg(logits)  # (b, size_y)
         pos_logits = tf.matrix_diag_part(logits)  # (b,)
         pos_logits = tf.reshape(pos_logits, shape=[-1, 1])  # (b, 1)
-        loss1 = tf.reduce_mean(tf.sigmoid(-pos_logits + logits), axis=-1)  # (b,)
-        loss2 = tf.reduce_mean(tf.sigmoid(tf.pow(logits, 2)), axis=-1) - \
-                tf.squeeze(tf.sigmoid(tf.pow(pos_logits, 2))/self.config.batch_size)  # (b,)
-        return tf.reduce_mean(loss1+loss2)
+        prob = tf.sigmoid((pos_logits - logits))  # (b, size_y)
+        prob = tf.reduce_sum(tf.multiply(prob, softmax_scores), axis=1)  # (b,)
+        loss = -tf.log(prob + 1e-24)
+        reg_loss = tf.reduce_sum(tf.multiply(tf.pow(logits, 2), softmax_scores), axis=1)  # (b,)
+
+        return tf.reduce_mean(loss + self.config.bpr_reg*reg_loss)
+
+    def _top1_max_loss(self, logits):
+        softmax_scores = self._softmax_neg(logits)  # (b, size_y)
+
+        pos_logits = tf.matrix_diag_part(logits)  # (b,)
+        pos_logits = tf.reshape(pos_logits, shape=[-1, 1])  # (b, 1)
+        prob = tf.sigmoid(-pos_logits + logits) + tf.sigmoid(tf.pow(logits, 2))
+        loss = tf.reduce_sum(tf.multiply(prob, softmax_scores), axis=1)
+
+        return tf.reduce_mean(loss)
 
     def _build_model(self):
         self._create_variable()
@@ -162,10 +193,13 @@ class GRU4Rec(AbstractRecommender):
         loss = self.loss_fun(logits)
 
         # reg loss
-
         reg_loss = l2_loss(inputs, items_embed, items_bias)
         final_loss = loss + self.config.reg*reg_loss
         self.update_opt = tf.train.AdamOptimizer(self.config.lr).minimize(final_loss)
+
+    def _sample_neg_items(self, size):
+        samples = np.searchsorted(self.pop_cumsum, np.random.rand(size))
+        return samples
 
     def fit(self):
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
@@ -174,7 +208,6 @@ class GRU4Rec(AbstractRecommender):
 
         data_ui, offset_idx = self.data_ui, self.offset_idx
         data_items = data_ui[:, 1]
-
         for epoch in range(self.config.epochs):
             state = [np.zeros([self.config.batch_size, n_unit], dtype=np.float32) for n_unit in self.config.layers]
             user_idx = np.random.permutation(len(offset_idx) - 1)
@@ -190,6 +223,9 @@ class GRU4Rec(AbstractRecommender):
                     in_idx = out_idx
                     out_idx = data_items[start+i+1]
                     out_items = out_idx
+                    if self.config.n_sample:
+                        neg_items = self._sample_neg_items(self.config.n_sample)
+                        out_items = np.hstack([out_items, neg_items])
 
                     feed = {self.X_ph: in_idx, self.Y_ph: out_items}
                     for l in range(len(self.config.layers)):
@@ -220,12 +256,15 @@ class GRU4Rec(AbstractRecommender):
             if best_result is None or cur_result["NDCG@10"] >= best_result["NDCG@10"]:
                 best_result = cur_result
                 stop_counter = 0
+
         self.logger.info("best:".ljust(12) + f"\t{best_result.values_str}")
 
     def _get_user_embeddings(self):
         users = np.array(list(self.user_pos_train.keys()), dtype=np.int32)
         u_nnz = np.array([len(self.user_pos_train[u]) for u in users], dtype=np.int32)
         users = users[np.argsort(-u_nnz)]
+        user_embeddings = np.zeros([self.users_num, self.config.layers[-1]], dtype=np.float32)  # saving user embedding
+
         data_ui, offset_idx = self.data_ui, self.offset_idx
         data_items = data_ui[:, 1]
 
@@ -237,7 +276,6 @@ class GRU4Rec(AbstractRecommender):
         end = offset_idx[users[batch_iter] + 1]  # the start index of next user
 
         batch_mask = np.ones([self.config.batch_size], dtype=np.int32)
-        user_embeddings = np.zeros([self.users_num, self.config.layers[-1]], dtype=np.float32)  # saving user embedding
         while np.sum(batch_mask) > 0:
             min_len = (end - start).min()
 
