@@ -5,7 +5,7 @@ Reference: https://github.com/hexiangnan/LightGCN
 """
 
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@gmail.com"
+__email__ = "zhongchuansun@foxmail.com"
 
 __all__ = ["LightGCN", "LightGCNConfig"]
 

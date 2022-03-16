@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@gmail.com"
+__email__ = "zhongchuansun@foxmail.com"
 
 __all__ = ["normalize_adj_matrix"]
 
