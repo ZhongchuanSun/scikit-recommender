@@ -225,12 +225,15 @@ class Dataset(object):
     def _load_data(self, sep, columns):
         pkl_file = self._file_prefix + ".pkl"
         if os.path.exists(pkl_file):
-            with open(pkl_file, 'rb') as fin:
-                _t_data: Dataset = pickle.load(fin)
-            if _t_data._my_md5 == self._raw_md5:
-                _t_data._data_dir = self._data_dir  # keep data path up-to-date
-                self.__dict__ = _t_data.__dict__
-                return
+            try:
+                with open(pkl_file, 'rb') as fin:
+                    _t_data: Dataset = pickle.load(fin)
+                if _t_data._my_md5 == self._raw_md5:
+                    _t_data._data_dir = self._data_dir  # keep data path up-to-date
+                    self.__dict__ = _t_data.__dict__
+                    return
+            except EOFError as e:
+                pass
 
         self._load_from_raw(sep, columns)
 
