@@ -75,13 +75,13 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 ## Models
 
 | Recommender | Implementation    | Paper|
-|---|:-:|---|
-| BPRMF       | PyTorch           | [Steffen Rendle et al., BPR: Bayesian Personalized Ranking from Implicit Feedback, UAI 2009.](https://dl.acm.org/doi/10.5555/1795114.1795167) |
-| AOBPR       | C/Cython          | [Steffen Rendle et al., Improving Pairwise Learning for Item Recommendation from Implicit Feedback, WSDM 2014.](https://dl.acm.org/doi/10.1145/2556195.2556248) |
-| BERT4Rec    | TensorFlow (1.14) | [Fei Sun et al., BERT4Rec: Sequential Recommendation with Bidirectional Encoder Representations from Transformer, CIKM 2019](https://dl.acm.org/doi/abs/10.1145/3357384.3357895) |
-| LightGCN    | PyTorch           | [Xiangnan He et al., LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation, SIGIR 2020.](https://dl.acm.org/doi/10.1145/3397271.3401063)|
-| SASRec      | TensorFlow (1.14) | [Wangcheng Kang et al., Self-Attentive Sequential Recommendation, ICDM 2018.](https://ieeexplore.ieee.org/abstract/document/8594844) |
-| HGN         |  PyTorch          | [Chen Ma et al., Hierarchical Gating Networks for Sequential Recommendation, KDD 2019](https://dl.acm.org/doi/10.1145/3292500.3330984) |
-| TransRec    | PyTorch           | [Ruining He et al., Translation-based Recommendation, RecSys 2017](https://dl.acm.org/doi/10.1145/3109859.3109882) |
-| SRGNN       | TensorFlow (1.14) | [Shu Wu et al., Session-Based Recommendation with Graph Neural Networks, AAAI 2019.](https://ojs.aaai.org/index.php/AAAI/article/view/3804) |
-| FPMC        | PyTorch           | [Steffen Rendle et al., Factorizing Personalized Markov Chains for Next-Basket Recommendation. WWW 2010.](https://dl.acm.org/doi/10.1145/1772690.1772773)  |
+|:-:|:-:|---|
+| [BPRMF](skrec/recommender/BPRMF.py)                   | PyTorch           | [Steffen Rendle et al., BPR: Bayesian Personalized Ranking from Implicit Feedback, UAI 2009.](https://dl.acm.org/doi/10.5555/1795114.1795167) |
+| [AOBPR](skrec/recommender/AOBPR/AOBPR.py)             | C/Cython          | [Steffen Rendle et al., Improving Pairwise Learning for Item Recommendation from Implicit Feedback, WSDM 2014.](https://dl.acm.org/doi/10.1145/2556195.2556248) |
+| [BERT4Rec](skrec/recommender/BERT4Rec/BERT4Rec.py)    | TensorFlow (1.14) | [Fei Sun et al., BERT4Rec: Sequential Recommendation with Bidirectional Encoder Representations from Transformer, CIKM 2019.](https://dl.acm.org/doi/abs/10.1145/3357384.3357895) |
+| [LightGCN](skrec/recommender/LightGCN.py)             | PyTorch           | [Xiangnan He et al., LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation, SIGIR 2020.](https://dl.acm.org/doi/10.1145/3397271.3401063)|
+| [SASRec](skrec/recommender/SASRec.py)                 | TensorFlow (1.14) | [Wangcheng Kang et al., Self-Attentive Sequential Recommendation, ICDM 2018.](https://ieeexplore.ieee.org/abstract/document/8594844) |
+| [HGN](skrec/recommender/HGN.py)                       |  PyTorch          | [Chen Ma et al., Hierarchical Gating Networks for Sequential Recommendation, KDD 2019.](https://dl.acm.org/doi/10.1145/3292500.3330984) |
+| [TransRec](skrec/recommender/TransRec.py)             | PyTorch           | [Ruining He et al., Translation-based Recommendation, RecSys 2017.](https://dl.acm.org/doi/10.1145/3109859.3109882) |
+| [SRGNN](skrec/recommender/SRGNN.py)                   | TensorFlow (1.14) | [Shu Wu et al., Session-Based Recommendation with Graph Neural Networks, AAAI 2019.](https://ojs.aaai.org/index.php/AAAI/article/view/3804) |
+| [FPMC](skrec/recommender/FPMC.py)                     | PyTorch           | [Steffen Rendle et al., Factorizing Personalized Markov Chains for Next-Basket Recommendation. WWW 2010.](https://dl.acm.org/doi/10.1145/1772690.1772773)  |
