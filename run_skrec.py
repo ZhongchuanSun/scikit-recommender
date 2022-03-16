@@ -7,6 +7,7 @@ from skrec import RankingEvaluator
 from skrec import Dataset
 from skrec import Config
 from skrec.recommender.base import AbstractRecommender
+old_handlers = logging.root.handlers[:]
 
 
 class RunConfig(Config):
@@ -50,9 +51,7 @@ def _set_random_seed(seed=2020):
     random.seed(seed)
 
     try:
-        old_handlers = logging.root.handlers[:]
         import tensorflow as tf
-        logging.root.handlers = old_handlers
         tf.set_random_seed(seed)
         print("set tensorflow seed")
     except:
@@ -114,6 +113,7 @@ def main():
                                  num_thread=run_config.test_thread)
 
     model: AbstractRecommender = Model(dataset, model_config, evaluator)
+    logging.root.handlers = old_handlers
     model.fit()
 
 
