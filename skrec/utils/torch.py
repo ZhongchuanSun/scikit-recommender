@@ -3,8 +3,9 @@ __email__ = "zhongchuansun@foxmail.com"
 
 __all__ = ["inner_product", "euclidean_distance",
            "l2_distance", "bpr_loss", "l2_loss",
-           "sigmoid_cross_entropy",
-           "sp_mat_to_sp_tensor", "get_initializer"]
+           "sigmoid_cross_entropy", "square_loss",
+           "sp_mat_to_sp_tensor", "dropout_sparse",
+           "get_initializer"]
 
 import numpy as np
 import scipy.sparse as sp
@@ -32,6 +33,30 @@ def sp_mat_to_sp_tensor(sp_mat: sp.spmatrix) -> Tensor:
     coo = sp_mat.tocoo().astype(np.float32)
     indices = torch.from_numpy(np.asarray([coo.row, coo.col]))
     return torch.sparse_coo_tensor(indices, coo.data, coo.shape).coalesce()
+
+
+def dropout_sparse(torch_sp_mat, keep_prob, training):
+    """Dropout for sparse tensors.
+    """
+    if keep_prob <= 0.0 or keep_prob > 1.0:
+        raise ValueError(f"'keep_prob' must be a float in the range (0, 1], got {keep_prob}")
+    if training and keep_prob < 1:
+        device = torch_sp_mat.device
+        values = torch_sp_mat.values()
+        noise_shape = values.shape
+
+        random_tensor = torch.Tensor(noise_shape).uniform_().to(device) + keep_prob
+        dropout_mask = random_tensor.floor().bool()
+
+        indices = torch_sp_mat.indices()
+        indices = indices[:, dropout_mask]
+        scale = 1.0 / keep_prob
+        values = values[dropout_mask]*scale
+        shape = torch_sp_mat.shape
+
+        torch_sp_mat = torch.sparse_coo_tensor(indices, values, shape).coalesce().to(device)
+
+    return torch_sp_mat
 
 
 def bpr_loss(y_pos: Tensor, y_neg: Tensor) -> Tensor:
@@ -88,3 +113,9 @@ def get_initializer(init_method: str):
 
 def sigmoid_cross_entropy(y_pre, y_true):
     return F.binary_cross_entropy_with_logits(input=y_pre, target=y_true, reduction="none")
+
+
+def square_loss(y_pre, y_true):
+    if isinstance(y_true, (float, int)):
+        y_true = y_pre.new_full(y_pre.size(), y_true)
+    return F.mse_loss(input=y_pre, target=y_true, reduction="none")

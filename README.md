@@ -90,3 +90,4 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 | [Caser](skrec/recommender/Caser.py)                   | PyTorch           |[Jiaxi Tang et al., Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding.](https://dl.acm.org/doi/10.1145/3159652.3159656) | WSDM 2018 |
 | [CML](skrec/recommender/CML.py)                       | TensorFlow (1.14) | [Cheng-Kang Hsieh et al., Collaborative Metric Learning.](https://dl.acm.org/doi/10.1145/3038912.3052639) | WWW 2017 |
 | [MultiVAE](skrec/recommender/MultVAE.py)              | PyTorch           | [Dawen Liang, et al., Variational Autoencoders for Collaborative Filtering.](https://dl.acm.org/doi/10.1145/3178876.3186150) | WWW 2018 |
+| [CDAE](skrec/recommender/CDAE.py)                     | PyTorch           | [Yao Wu et al., Collaborative Denoising Auto-Encoders for Top-n Recommender Systems.](https://dl.acm.org/doi/10.1145/2835776.2835837) | WSDM 2016 |
