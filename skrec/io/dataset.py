@@ -103,6 +103,15 @@ class ImplicitFeedback(Interaction):
         return ui_pairs
 
     @fetch_data
+    def to_user_item_pairs_by_time(self) -> np.ndarray:
+        if _TIME not in self._data:
+            raise ValueError("This dataset do not contain timestamp.")
+        data_uit = self._data[[_USER, _ITEM, _TIME]]
+        data_uit = data_uit.sort_values(by=["user", "time"], inplace=False)
+        data_ui = data_uit[[_USER, _ITEM]].to_numpy(copy=True, dtype=np.int32)
+        return data_ui
+
+    @fetch_data
     def to_csr_matrix(self) -> sp.csr_matrix:
         users, items = self._data[_USER].to_numpy(), self._data[_ITEM].to_numpy()
         ratings = np.ones(len(users), dtype=np.float32)

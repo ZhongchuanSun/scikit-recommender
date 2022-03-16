@@ -86,3 +86,4 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 | [SRGNN](skrec/recommender/SRGNN.py)                   | TensorFlow (1.14) | [Shu Wu et al., Session-Based Recommendation with Graph Neural Networks, AAAI 2019.](https://ojs.aaai.org/index.php/AAAI/article/view/3804) |
 | [FPMC](skrec/recommender/FPMC.py)                     | PyTorch           | [Steffen Rendle et al., Factorizing Personalized Markov Chains for Next-Basket Recommendation. WWW 2010.](https://dl.acm.org/doi/10.1145/1772690.1772773)  |
 | [Pop](skrec/recommender/Pop.py)                       | Python            | Make recommendations based on item popularity. |
+| [GRU4Rec](skrec/recommender/GRU4Rec.py)               | TensorFlow (1.14) | [Balázs Hidasi et al., Session-based Recommendations with Recurrent Neural Networks, ICLR 2016.](https://arxiv.org/abs/1511.06939) |
