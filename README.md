@@ -84,3 +84,4 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 | HGN         |  PyTorch          | [Chen Ma et al., Hierarchical Gating Networks for Sequential Recommendation, KDD 2019](https://dl.acm.org/doi/10.1145/3292500.3330984) |
 | TransRec    | PyTorch           | [Ruining He et al., Translation-based Recommendation, RecSys 2017](https://dl.acm.org/doi/10.1145/3109859.3109882) |
 | SRGNN       | TensorFlow (1.14) | [Shu Wu et al., Session-Based Recommendation with Graph Neural Networks, AAAI 2019.](https://ojs.aaai.org/index.php/AAAI/article/view/3804) |
+| FPMC        | PyTorch           | [Steffen Rendle et al., Factorizing Personalized Markov Chains for Next-Basket Recommendation. WWW 2010.](https://dl.acm.org/doi/10.1145/1772690.1772773)  |
