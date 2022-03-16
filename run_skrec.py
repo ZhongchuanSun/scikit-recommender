@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import Union, Tuple, List
 from importlib.util import find_spec
 from importlib import import_module
@@ -49,7 +50,9 @@ def _set_random_seed(seed=2020):
     random.seed(seed)
 
     try:
+        old_handlers = logging.root.handlers[:]
         import tensorflow as tf
+        logging.root.handlers = old_handlers
         tf.set_random_seed(seed)
         print("set tensorflow seed")
     except:
