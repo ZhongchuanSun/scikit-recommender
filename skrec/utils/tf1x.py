@@ -3,8 +3,10 @@ __email__ = "zhongchuansun@foxmail.com"
 
 __all__ = ["inner_product", "bpr_loss", "l2_loss",
            "euclidean_distance", "l2_distance",
-           "hinge_loss"]
+           "hinge_loss", "sp_mat_to_sp_tensor"]
 
+import numpy as np
+import scipy.sparse as sp
 import tensorflow as tf
 
 
@@ -37,3 +39,10 @@ def l2_distance(a, b, dim: int=-1):
 
 def hinge_loss(yij, margin=1.0):
     return tf.nn.relu(margin - yij)
+
+
+def sp_mat_to_sp_tensor(sp_mat):
+    if not isinstance(sp_mat, sp.coo_matrix):
+        sp_mat = sp_mat.tocoo().astype(np.float32)
+    indices = np.asarray([sp_mat.row, sp_mat.col]).transpose()
+    return tf.SparseTensor(indices, sp_mat.data, sp_mat.shape)

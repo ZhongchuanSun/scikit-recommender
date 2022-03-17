@@ -73,7 +73,7 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 
 ## Models
 
-| Recommender | Implementation | Paper | Publication &nbsp;&nbsp;&nbsp;|
+| Recommender | Implementation | Paper | &nbsp; Publication &nbsp;|
 |:-:|:-:|---|:-:|
 | [BPRMF](skrec/recommender/BPRMF.py)                   | PyTorch           | [Steffen Rendle et al., BPR: Bayesian Personalized Ranking from Implicit Feedback.](https://dl.acm.org/doi/10.5555/1795114.1795167) | UAI 2009 |
 | [AOBPR](skrec/recommender/AOBPR/AOBPR.py)             | C/Cython          | [Steffen Rendle et al., Improving Pairwise Learning for Item Recommendation from Implicit Feedback.](https://dl.acm.org/doi/10.1145/2556195.2556248) | WSDM 2014 |
@@ -91,3 +91,4 @@ You can also find examples in [tutorial.ipynb](https://github.com/ZhongchuanSun/
 | [CML](skrec/recommender/CML.py)                       | TensorFlow (1.14) | [Cheng-Kang Hsieh et al., Collaborative Metric Learning.](https://dl.acm.org/doi/10.1145/3038912.3052639) | WWW 2017 |
 | [MultiVAE](skrec/recommender/MultVAE.py)              | PyTorch           | [Dawen Liang, et al., Variational Autoencoders for Collaborative Filtering.](https://dl.acm.org/doi/10.1145/3178876.3186150) | WWW 2018 |
 | [CDAE](skrec/recommender/CDAE.py)                     | PyTorch           | [Yao Wu et al., Collaborative Denoising Auto-Encoders for Top-n Recommender Systems.](https://dl.acm.org/doi/10.1145/2835776.2835837) | WSDM 2016 |
+| [SGAT](skrec/recommender/SGAT.py)                     | TensorFlow (1.14) | [Zhongchuan Sun, et al., Sequential Graph Collaborative Filtering](https://www.sciencedirect.com/science/article/pii/S0020025522001049) | Information Sciences 2022 |
