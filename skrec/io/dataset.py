@@ -216,6 +216,7 @@ class Dataset(object):
         self.num_items = 0
         self.num_ratings = 0
         self._my_md5 = ""
+        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + ".pkl")
         self._load_data(sep, columns)
         weakref.finalize(self, self._destructor)
 
@@ -232,10 +233,9 @@ class Dataset(object):
         return os.path.join(self.data_dir, self.data_name)
 
     def _load_data(self, sep, columns):
-        pkl_file = self._file_prefix + ".pkl"
-        if os.path.exists(pkl_file):
+        if os.path.exists(self._cache_file):
             try:
-                with open(pkl_file, 'rb') as fin:
+                with open(self._cache_file, 'rb') as fin:
                     _t_data: Dataset = pickle.load(fin)
                 if _t_data._my_md5 == self._raw_md5:
                     _t_data._data_dir = self._data_dir  # keep data path up-to-date
@@ -247,8 +247,7 @@ class Dataset(object):
         self._load_from_raw(sep, columns)
 
     def _dump_data(self):
-        pkl_file = self._file_prefix + ".pkl"
-        with open(pkl_file, 'wb') as fout:
+        with open(self._cache_file, 'wb') as fout:
             pickle.dump(self, fout)
 
     def _destructor(self):
