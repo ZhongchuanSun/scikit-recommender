@@ -6,13 +6,14 @@ Author: Yao Wu, Christopher DuBois, Alice X. Zheng, and Martin Ester
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["CDAEConfig", "CDAE"]
+__all__ = ["CDAE"]
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.sparse as torch_sp
+from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
@@ -37,7 +38,7 @@ class CDAEConfig(Config):
                  epochs=1000,
                  early_stop=200,
                  **kwargs):
-        super(CDAEConfig, self).__init__(**kwargs)
+        super(CDAEConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.hidden_dim: int = hidden_dim
@@ -131,7 +132,8 @@ class _CDAE(nn.Module):
 
 
 class CDAE(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: CDAEConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = CDAEConfig(**cfg_dict)
         super(CDAE, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

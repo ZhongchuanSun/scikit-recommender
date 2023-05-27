@@ -7,13 +7,14 @@ Reference: https://github.com/hexiangnan/LightGCN
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["LightGCN", "LightGCNConfig"]
+__all__ = ["LightGCN"]
 
 import os
 import torch
 import torch.sparse as torch_sp
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Dict
 from .base import AbstractRecommender
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..utils.py import RankingEvaluator, MetricReport
@@ -36,7 +37,7 @@ class LightGCNConfig(Config):
                  epochs=1000,
                  early_stop=100,
                  **kwargs):
-        super(LightGCNConfig, self).__init__(**kwargs)
+        super(LightGCNConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -111,7 +112,8 @@ class _LightGCN(nn.Module):
 
 
 class LightGCN(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: LightGCNConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = LightGCNConfig(**cfg_dict)
         super(LightGCN, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

@@ -7,12 +7,13 @@ Reference: https://github.com/allenjack/HGN
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["HGNConfig", "HGN"]
+__all__ = ["HGN"]
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import Parameter
+from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import RankingEvaluator, MetricReport
 from ..io import Dataset
@@ -32,7 +33,7 @@ class HGNConfig(Config):
                  epochs=1000,
                  early_stop=100,
                  **kwargs):
-        super(HGNConfig, self).__init__(**kwargs)
+        super(HGNConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.seq_L: int = seq_L
@@ -164,7 +165,8 @@ class _HGN(nn.Module):
 
 
 class HGN(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: HGNConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = HGNConfig(**cfg_dict)
         super(HGN, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

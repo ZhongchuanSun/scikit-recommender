@@ -7,12 +7,13 @@ Reference: https://github.com/graytowne/caser_pytorch
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["CaserConfig", "Caser"]
+__all__ = ["Caser"]
 
 import torch
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
+from typing import Dict
 from .base import AbstractRecommender
 from ..io import Dataset
 from ..utils.py import Config
@@ -36,7 +37,7 @@ class CaserConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(CaserConfig, self).__init__(**kwargs)
+        super(CaserConfig, self).__init__()
         self.lr: float = lr
         self.l2_reg: float = l2_reg
         self.embed_size: int = embed_size
@@ -163,7 +164,8 @@ class _Caser(nn.Module):
 
 
 class Caser(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: CaserConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = CaserConfig(**cfg_dict)
         super(Caser, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

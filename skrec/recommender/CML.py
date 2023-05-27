@@ -7,10 +7,11 @@ Reference: https://github.com/changun/CollMetric
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["CMLConfig", "CML"]
+__all__ = ["CML"]
 
 import tensorflow as tf
 from tensorflow import keras
+from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
@@ -32,7 +33,7 @@ class CMLConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(CMLConfig, self).__init__(**kwargs)
+        super(CMLConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -57,7 +58,8 @@ class CMLConfig(Config):
 
 
 class CML(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: CMLConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = CMLConfig(**cfg_dict)
         super(CML, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

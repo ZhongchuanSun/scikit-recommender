@@ -8,11 +8,11 @@ Reference: https://github.com/hidasib/GRU4Rec
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["GRU4RecConfig", "GRU4Rec"]
+__all__ = ["GRU4Rec"]
 
 import numpy as np
 import tensorflow as tf
-from typing import List
+from typing import List, Dict
 from .base import AbstractRecommender
 from ..utils.py import RankingEvaluator, MetricReport
 from ..io import Dataset
@@ -32,7 +32,7 @@ class GRU4RecConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(GRU4RecConfig, self).__init__(**kwargs)
+        super(GRU4RecConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.layers: List[int] = layers
@@ -57,7 +57,8 @@ class GRU4RecConfig(Config):
 
 
 class GRU4Rec(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: GRU4RecConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = GRU4RecConfig(**cfg_dict)
         super(GRU4Rec, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

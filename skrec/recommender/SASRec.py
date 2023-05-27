@@ -6,9 +6,10 @@ Reference: https://github.com/kang205/SASRec
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["SASRecConfig", "SASRec"]
+__all__ = ["SASRec"]
 
 import numpy as np
+from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import RankingEvaluator, MetricReport
 from ..io import Dataset
@@ -282,7 +283,7 @@ class SASRecConfig(Config):
                  epochs=1000,
                  early_stop=100,
                  **kwargs):
-        super(SASRecConfig, self).__init__(**kwargs)
+        super(SASRecConfig, self).__init__()
         self.lr: float = lr
         self.l2_emb: float = l2_emb
         self.hidden_units: int = hidden_units
@@ -309,7 +310,8 @@ class SASRecConfig(Config):
 
 
 class SASRec(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: SASRecConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = SASRecConfig(**cfg_dict)
         super(SASRec, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

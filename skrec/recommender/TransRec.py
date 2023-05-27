@@ -7,12 +7,13 @@ Reference: https://drive.google.com/file/d/0B9Ck8jw-TZUEVmdROWZKTy1fcEE/view?usp
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["TransRecConfig", "TransRec"]
+__all__ = ["TransRec"]
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn.parameter import Parameter
+from typing import Dict
 from .base import AbstractRecommender
 from ..io import Dataset
 from ..utils.py import Config
@@ -31,7 +32,7 @@ class TransRecConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(TransRecConfig, self).__init__(**kwargs)
+        super(TransRecConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -94,7 +95,8 @@ class _TransRec(nn.Module):
 
 
 class TransRec(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: TransRecConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = TransRecConfig(**cfg_dict)
         super(TransRec, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

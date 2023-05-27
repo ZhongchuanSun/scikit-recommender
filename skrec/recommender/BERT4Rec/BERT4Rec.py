@@ -6,12 +6,13 @@ Reference: https://github.com/FeiSun/BERT4Rec
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["BERT4RecConfig", "BERT4Rec"]
+__all__ = ["BERT4Rec"]
 
 import os
 import numpy as np
 import time
 import pickle
+from typing import Dict
 from skrec.utils.py import Config
 from skrec.io import Dataset
 from skrec.recommender.base import AbstractRecommender
@@ -46,7 +47,7 @@ class BERT4RecConfig(Config):
                  verbose=10,
                  pool_size=10,
                  **kwargs):
-        super(BERT4RecConfig, self).__init__(**kwargs)
+        super(BERT4RecConfig, self).__init__()
         # prepare data
         self.max_seq_len: int = max_seq_len
         self.masked_lm_prob: float = masked_lm_prob
@@ -72,7 +73,8 @@ class BERT4RecConfig(Config):
 
 
 class BERT4Rec(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: BERT4RecConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = BERT4RecConfig(**cfg_dict)
         super(BERT4Rec, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

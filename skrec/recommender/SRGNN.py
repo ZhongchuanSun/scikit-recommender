@@ -7,11 +7,12 @@ Reference: https://github.com/CRIPAC-DIG/SR-GNN
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["SRGNNConfig", "SRGNN"]
+__all__ = ["SRGNN"]
 
 import math
 import numpy as np
 import tensorflow as tf
+from typing import Dict
 from .base import AbstractRecommender
 from ..io import Dataset
 from ..utils.py import Config
@@ -34,7 +35,7 @@ class SRGNNConfig(Config):
                  epochs=500,
                  early_stop=50,
                  **kwargs):
-        super(SRGNNConfig, self).__init__(**kwargs)
+        super(SRGNNConfig, self).__init__()
         self.lr: float = lr
         self.l2_reg: float = l2_reg
         self.hidden_size: int = hidden_size
@@ -63,7 +64,8 @@ class SRGNNConfig(Config):
 
 
 class SRGNN(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: SRGNNConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = SRGNNConfig(**cfg_dict)
         super(SRGNN, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

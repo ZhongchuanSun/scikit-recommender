@@ -7,14 +7,16 @@ from skrec import RankingEvaluator
 from skrec import Dataset
 from skrec import Config
 from skrec.recommender.base import AbstractRecommender
+from skrec import merge_config_with_cmd_args
 old_handlers = logging.root.handlers[:]
 
 
 class RunConfig(Config):
     def __init__(self,
-                 recommender="BPRMF",
+                 recommender="TransRec",
                  data_dir="",
-                 file_column="UIRT", column_sep='\t',
+                 file_column="UIRT",
+                 column_sep='\t',
                  gpu_id=0,
                  metric=("Precision", "Recall", "MAP", "NDCG", "MRR"),
                  top_k=(10, 20, 30, 40, 50, 100),
@@ -22,7 +24,7 @@ class RunConfig(Config):
                  test_thread=4,
                  seed=2021,
                  **kwargs):
-        super(RunConfig, self).__init__(**kwargs)
+        super(RunConfig, self).__init__()
         self.recommender: str = recommender
         self.data_dir: str = data_dir
         self.file_column: str = file_column
@@ -88,19 +90,26 @@ def import_model_and_config(model_name: str):
 
 
 def main():
-    cfg_file = "./skrec.ini"
     # read config
-    run_config = RunConfig()
-    run_config.parse_args_from_ini(cfg_file, "skrec")  # parse args from file and overwrite the default values
-    run_config.parse_args_from_cmd()  # parse args from cmd and overwrite the previous values
+    run_config = {"recommender": "TransRec",
+                  "data_dir": "dataset/Beauty_loo_u5_i5",
+                  "file_column": "UIRT",
+                  "sep": ',',
+                  "gpu_id": 0,
+                  "metric": ("Recall", "NDCG"),
+                  "top_k": (10,20,30,40,50),
+                  "test_thread": 4,
+                  "test_batch_size": 64,
+                  "seed": 2021
+                  }
+    run_config = merge_config_with_cmd_args(run_config)
+    run_config = RunConfig(**run_config)
     model_name = run_config.recommender
 
-    Model, ModelConfig = import_model_and_config(model_name)
+    Model, _ = import_model_and_config(model_name)
 
-    model_config: Config = ModelConfig()
-    # parse args from file and overwrite the default values
-    model_config.parse_args_from_ini(cfg_file, model_name)
-    model_config.parse_args_from_cmd()  # parse args from cmd and overwrite the previous values
+    model_config = {"lr": 1e-4}
+    model_config = merge_config_with_cmd_args(model_config)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)
     _set_random_seed(run_config.seed)

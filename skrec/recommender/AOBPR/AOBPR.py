@@ -6,9 +6,10 @@ Author: Steffen Rendle, and Christoph Freudenthaler
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["AOBPRConfig", "AOBPR"]
+__all__ = ["AOBPR"]
 
 import numpy as np
+from typing import Dict
 from ..base import AbstractRecommender
 from ...io import PairwiseIterator
 from ...utils.py import randint_choice
@@ -27,7 +28,7 @@ class AOBPRConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(AOBPRConfig, self).__init__(**kwargs)
+        super(AOBPRConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -46,7 +47,8 @@ class AOBPRConfig(Config):
 
 
 class AOBPR(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: AOBPRConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = AOBPRConfig(**cfg_dict)
         super(AOBPR, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

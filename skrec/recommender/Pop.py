@@ -1,10 +1,11 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["PopConfig", "Pop"]
+__all__ = ["Pop"]
 
 import numpy as np
 import pandas as pd
+from typing import Dict
 from ..io import Dataset
 from ..utils.py import Config
 from ..utils.py import RankingEvaluator
@@ -13,11 +14,12 @@ from .base import AbstractRecommender
 
 class PopConfig(Config):
     def __init__(self, **kwargs):
-        super(PopConfig, self).__init__(**kwargs)
+        super(PopConfig, self).__init__()
 
 
 class Pop(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: PopConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = PopConfig(**cfg_dict)
         super(Pop, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

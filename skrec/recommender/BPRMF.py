@@ -6,11 +6,12 @@ Author: Steffen Rendle, Christoph Freudenthaler, Zeno Gantner, and Lars Schmidt-
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["BPRMFConfig", "BPRMF"]
+__all__ = ["BPRMF"]
 
 import torch
 import torch.nn as nn
 import numpy as np
+from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
@@ -28,7 +29,7 @@ class BPRMFConfig(Config):
                  epochs=1000,
                  early_stop=200,
                  **kwargs):
-        super(BPRMFConfig, self).__init__(**kwargs)
+        super(BPRMFConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.n_dim: int = n_dim
@@ -82,7 +83,8 @@ class _MF(nn.Module):
 
 
 class BPRMF(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: BPRMFConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = BPRMFConfig(**cfg_dict)
         super(BPRMF, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

@@ -7,12 +7,13 @@ Reference: https://github.com/ZhongchuanSun/SGAT
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["SGATConfig", "SGAT"]
+__all__ = ["SGAT"]
 
 import os
 import numpy as np
 import tensorflow as tf
 import scipy.sparse as sp
+from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
@@ -36,7 +37,7 @@ class SGATConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(SGATConfig, self).__init__(**kwargs)
+        super(SGATConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.n_layers: int = n_layers
@@ -73,7 +74,8 @@ def mexp(x, tau=1.0):
 
 
 class SGAT(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: SGATConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = SGATConfig(**cfg_dict)
         super(SGAT, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset

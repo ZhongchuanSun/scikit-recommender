@@ -6,12 +6,13 @@ Author: Steffen Rendle, Christoph Freudenthaler, and Lars Schmidt-Thieme
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@foxmail.com"
 
-__all__ = ["FPMCConfig", "FPMC"]
+__all__ = ["FPMC"]
 
 
 import torch
 import torch.nn as nn
 import numpy as np
+from typing import Dict
 from .base import AbstractRecommender
 from ..io import Dataset
 from ..utils.py import Config
@@ -30,7 +31,7 @@ class FPMCConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(FPMCConfig, self).__init__(**kwargs)
+        super(FPMCConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -88,7 +89,8 @@ class _FPMC(nn.Module):
 
 
 class FPMC(AbstractRecommender):
-    def __init__(self, dataset: Dataset, config: FPMCConfig, evaluator: RankingEvaluator):
+    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
+        config = FPMCConfig(**cfg_dict)
         super(FPMC, self).__init__(dataset, config)
         self.config = config
         self.dataset = dataset
