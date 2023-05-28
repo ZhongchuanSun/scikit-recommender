@@ -1,0 +1,41 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-publish:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python-version: ["3.6", "3.6-x86", "3.7", "3.7-x86", "3.8", "3.8-x86", "3.9", "3.9-x86"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build and install Cython module
+        run: python setup.py build_ext --inplace
+
+      # - name: Test
+      #   run: python -m unittest discover
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          pip install twine
+          twine upload --repository pypi dist/*
