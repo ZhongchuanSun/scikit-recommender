@@ -11,8 +11,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
-        python-version: ["3.6", "3.6-x86", "3.7", "3.7-x86", "3.8", "3.8-x86", "3.9", "3.9-x86"]
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: [3.8]  # 3.6, 3.7, 3.8, 3.9
 
     steps:
       - name: Checkout code
