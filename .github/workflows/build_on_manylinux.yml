@@ -1,8 +1,9 @@
 name: publish-to-pypi
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - master
 
 jobs:
   build-wheel-manylinux:
