@@ -43,14 +43,14 @@ jobs:
       run: python setup.py bdist_wheel
 
     - name: List the *.whl packages (Windows)
-        if: startsWith(matrix.os, 'windows')
-        run: |
-          dir dist/*.whl
+      if: startsWith(matrix.os, 'windows')
+      run: |
+        dir dist/*.whl
 
     - name: List the *.whl packages (MacOS)
-        if: startsWith(matrix.os, 'windows')
-        run: |
-          ls dist/*.whl
+      if: startsWith(matrix.os, 'windows')
+      run: |
+        ls dist/*.whl
 
     - name: Publish wheels to PyPI
       env:
