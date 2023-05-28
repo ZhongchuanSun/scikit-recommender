@@ -106,7 +106,7 @@ def clean(func):
     return wrapper
 
 
-@clean
+# @clean
 def setup_package():
     extensions = get_extensions("skrec")
     include_dirs = get_include_dirs("skrec")
