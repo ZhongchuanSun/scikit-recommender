@@ -1,0 +1,60 @@
+name: Build on Windows and Mac
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-wheel-win-macos:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        python-version: [3.6]  # , 3.7, 3.8, 3.9, 3.10
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Display Python version
+      run: |
+        # test your matrix by printing the current Python version
+        python -c "import sys; print(sys.version)"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 twine
+        pip install -r requirements.txt
+
+    - name: Lint with flake8 for sysntax errors
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Build Python wheels on ${{ matrix.os }} Py${{ matrix.python-version }}
+      run: python setup.py bdist_wheel
+
+    - name: List the *.whl packages (Windows)
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          dir dist/*.whl
+
+    - name: List the *.whl packages (MacOS)
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          ls dist/*.whl
+
+    - name: Publish wheels to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        twine upload dist/*.whl
