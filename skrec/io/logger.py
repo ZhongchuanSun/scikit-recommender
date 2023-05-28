@@ -5,8 +5,18 @@ __all__ = ["Logger"]
 
 import sys
 import os
+import re
 import logging
 from typing import Optional
+
+
+class RemoveColorFilter(logging.Filter):
+
+    def filter(self, record):
+        if record:
+            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+            record.msg = ansi_escape.sub('', str(record.msg))
+        return True
 
 
 class Logger(object):
@@ -41,10 +51,12 @@ class Logger(object):
             if dir_name and not os.path.exists(dir_name):
                 os.makedirs(dir_name)
 
+            remove_color_filter = RemoveColorFilter()
             # write into file
             fh = logging.FileHandler(filename)
             fh.setLevel(logging.DEBUG)
             fh.setFormatter(formatter)
+            fh.addFilter(remove_color_filter)
             self.logger.addHandler(fh)  # add to Handler
 
     def _flush(self):

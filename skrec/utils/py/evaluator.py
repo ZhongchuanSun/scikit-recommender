@@ -6,8 +6,12 @@ __all__ = ["MetricReport", "RankingEvaluator", "MetricReport"]
 from typing import Sequence, Dict, Union, Optional, Tuple, List, Iterable
 from collections import OrderedDict
 import numpy as np
+import itertools
+from colorama import Fore, Style
 from .batch_iterator import BatchIterator
 from .cython import eval_score_matrix
+
+_text_colors = [Fore.RED, Fore.GREEN, Fore.YELLOW, Fore.BLUE, Fore.MAGENTA, Fore.CYAN]
 
 
 class MetricReport(object):
@@ -21,14 +25,18 @@ class MetricReport(object):
 
     @property
     def metrics_str(self) -> str:
-        return '\t'.join([f"{m}".ljust(12) for m in self.metrics()])
+        _colors = itertools.cycle(_text_colors)
+        return '\t'.join([c+f"{m}".ljust(12)+Style.RESET_ALL
+                          for c, m in zip(_colors, self.metrics())])
 
     def values(self):
         return self._results.values()
 
     @property
     def values_str(self) -> str:
-        return '\t'.join([f"{v:.8f}".ljust(12) for v in self.values()])
+        _colors = itertools.cycle(_text_colors)
+        return '\t'.join([c+f"{v:.8f}".ljust(12)+Style.RESET_ALL
+                          for c, v in zip(_colors, self.values())])
 
     def items(self):
         return self._results.items()
@@ -144,7 +152,9 @@ class RankingEvaluator(object):
             str: A string consist of all metrics information, such as
                 `"Precision@10    Precision@20    NDCG@10    NDCG@20"`.
         """
-        return "\t".join([metric.ljust(12) for metric in self.metrics_list])
+        _colors = itertools.cycle(_text_colors)
+        return '\t'.join([c + f"{m}".ljust(12) + Style.RESET_ALL
+                          for c, m in zip(_colors, self.metrics_list)])
 
     def evaluate(self, model, test_users: Optional[Iterable[int]]=None) -> MetricReport:
         """Evaluate `model`.
