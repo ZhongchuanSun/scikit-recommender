@@ -42,7 +42,7 @@ class LightGCNConfig(Config):
         self.reg: float = reg
         self.embed_size: int = embed_size
         self.n_layers: int = n_layers
-        self.adj_type: str = adj_type
+        self.adj_type: str = adj_type  # plain, norm, gcmc, pre
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop

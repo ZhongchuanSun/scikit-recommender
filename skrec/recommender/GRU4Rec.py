@@ -37,9 +37,9 @@ class GRU4RecConfig(Config):
         self.reg: float = reg
         self.layers: List[int] = layers
         self.batch_size: int = batch_size
-        self.loss: str = loss
-        self.hidden_act: str = hidden_act
-        self.final_act: str = final_act
+        self.loss: str = loss  # loss = top1, bpr
+        self.hidden_act: str = hidden_act  # hidden_act = relu, tanh
+        self.final_act: str = final_act  # final_act = linear, relu, leaky_relu
         self.epochs: int = epochs
         self.early_stop: int = early_stop
         self._validate()

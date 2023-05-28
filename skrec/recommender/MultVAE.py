@@ -37,6 +37,8 @@ class MultVAEConfig(Config):
         super(MultVAEConfig, self).__init__()
         self.lr: float = lr
         self.reg: float = reg
+        # p_dims is decoder's dimensions and q_dims is encoder's dimensions
+        # if q_dims is None, it will be symmetrical with p_dims
         self.p_dims: List[int] = p_dims
         self.q_dims: List[int] = q_dims
         self.keep_prob: float = keep_prob

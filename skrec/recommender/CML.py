@@ -39,7 +39,7 @@ class CMLConfig(Config):
         self.embed_size: int = embed_size
         self.margin: float = margin
         self.clip_norm: float = clip_norm
-        self.dns: int = dns
+        self.dns: int = dns  # dns > 1
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop

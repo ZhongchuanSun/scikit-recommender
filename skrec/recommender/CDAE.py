@@ -44,8 +44,8 @@ class CDAEConfig(Config):
         self.hidden_dim: int = hidden_dim
         self.dropout: float = dropout
         self.num_neg: int = num_neg
-        self.hidden_act: str = hidden_act
-        self.loss_func: str = loss_func
+        self.hidden_act: str = hidden_act  # hidden_act = identity, sigmoid
+        self.loss_func: str = loss_func  # loss_func = sigmoid_cross_entropy, square
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop

@@ -42,11 +42,11 @@ class GRU4RecPlusConfig(Config):
         self.bpr_reg: float = bpr_reg
         self.layers: List[int] = layers
         self.batch_size: int = batch_size
-        self.loss: str = loss
-        self.hidden_act: str = hidden_act
-        self.final_act: str = final_act
+        self.loss: str = loss  # loss = top1_max, bpr_max
+        self.hidden_act: str = hidden_act  # hidden_act = relu, tanh
+        self.final_act: str = final_act  # final_act = linear, relu, leaky_relu
         self.n_sample: int = n_sample
-        self.sample_alpha: float = sample_alpha
+        self.sample_alpha: float = sample_alpha  # 0 < sample_alpha <= 1
         self.epochs: int = epochs
         self.early_stop: int = early_stop
         self._validate()

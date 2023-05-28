@@ -43,6 +43,7 @@ class SRGNNConfig(Config):
         self.lr_dc_step: int = lr_dc_step
         self.step: int = step
         self.nonhybrid: bool = nonhybrid
+        # max_seq_len is used to save gpu memory by limiting the max length of item sequence
         self.max_seq_len: int = max_seq_len
         self.batch_size: int = batch_size
         self.epochs: int = epochs

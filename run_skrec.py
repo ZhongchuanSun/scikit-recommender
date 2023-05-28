@@ -13,13 +13,13 @@ old_handlers = logging.root.handlers[:]
 class RunConfig(Config):
     def __init__(self,
                  recommender="TransRec",
-                 data_dir="",
-                 file_column="UIRT",
+                 data_dir="dataset/Beauty_loo_u5_i5",  # the directory of training and test sets
+                 file_column="UIRT",  # UI, UIR, UIT, UIRT
                  column_sep='\t',
                  gpu_id=0,
-                 metric=("Precision", "Recall", "MAP", "NDCG", "MRR"),
+                 metric=("Precision", "Recall", "MAP", "NDCG", "MRR"),  # ("Precision", "Recall", "MAP", "NDCG", "MRR")
                  top_k=(10, 20, 30, 40, 50, 100),
-                 test_batch_size=64,
+                 test_batch_size=64,  # large test_batch_size might cause GPU memory-consuming, especially dataset is large
                  test_thread=4,
                  seed=2021,
                  **kwargs):

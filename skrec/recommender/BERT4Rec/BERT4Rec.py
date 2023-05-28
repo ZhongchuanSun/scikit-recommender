@@ -58,6 +58,7 @@ class BERT4RecConfig(Config):
         self.h_drop: float = h_drop
         self.h_size: int = h_size
         self.att_heads: int = att_heads
+        # do not tune
         self.init_range: float = init_range
         self.h_act: str = h_act
         self.n_layers: int = n_layers
