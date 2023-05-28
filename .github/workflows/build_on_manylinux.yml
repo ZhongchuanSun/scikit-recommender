@@ -50,6 +50,6 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
-        auditwheel repair dist/*.whl
+        auditwheel repair dist/*.whl --plat manylinux2014_x86_64
         ls dist/*-manylinux*.whl
         twine upload dist/*-manylinux*.whl
