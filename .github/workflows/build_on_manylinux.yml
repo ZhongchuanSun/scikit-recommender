@@ -42,14 +42,17 @@ jobs:
       if: ${{ matrix.plat == 'manylinux2014_x86_64' }}
       uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2014_x86_64
       with:
-        python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
+        python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp31-cp31'
         build-requirements: 'cython numpy'
+
+    - name: Auditwheel repair *.whl packages
+      run: auditwheel repair dist/*.whl --plat manylinux2014_x86_64
+
+    - name: List the *.whl packages
+      run: ls dist/*.whl
 
     - name: Publish wheels to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: |
-        auditwheel repair dist/*.whl --plat manylinux2014_x86_64
-        ls dist/*-manylinux*.whl
-        twine upload dist/*-manylinux*.whl
+      run: twine upload dist/*-manylinux*.whl
