@@ -1,13 +1,12 @@
 import os
 import logging
 from typing import Union, Tuple, List
-from importlib.util import find_spec
-from importlib import import_module
 from skrec import RankingEvaluator
 from skrec import Dataset
 from skrec import Config
 from skrec.recommender.base import AbstractRecommender
 from skrec import merge_config_with_cmd_args
+from skrec import ModelRegistry
 old_handlers = logging.root.handlers[:]
 
 
@@ -70,34 +69,15 @@ def _set_random_seed(seed=2020):
         pass
 
 
-def import_model_and_config(model_name: str):
-    spec_path = f"skrec.recommender.{model_name}"
-    if find_spec(spec_path):
-        module = import_module(spec_path)
-    else:
-        raise ModuleNotFoundError(f"Module '{spec_path}' is not found.")
-
-    if hasattr(module, model_name):
-        Model = getattr(module, model_name)
-    else:
-        raise ImportError(f"Import {model_name} failed from {module.__file__}!")
-
-    if hasattr(module, f"{model_name}Config"):
-        ModelConfig = getattr(module, f"{model_name}Config")
-    else:
-        raise ImportError(f"Import {model_name}Config failed from {module.__file__}!")
-    return Model, ModelConfig
-
-
 def main():
     # read config
-    run_config = {"recommender": "TransRec",
+    run_config = {"recommender": "BPRMF",
                   "data_dir": "dataset/Beauty_loo_u5_i5",
                   "file_column": "UIRT",
                   "sep": ',',
                   "gpu_id": 0,
                   "metric": ("Recall", "NDCG"),
-                  "top_k": (10,20,30,40,50),
+                  "top_k": (10, 20, 30, 40, 50),
                   "test_thread": 4,
                   "test_batch_size": 64,
                   "seed": 2021
@@ -106,7 +86,13 @@ def main():
     run_config = RunConfig(**run_config)
     model_name = run_config.recommender
 
-    Model, _ = import_model_and_config(model_name)
+    registry = ModelRegistry()
+    registry.load_skrec_model(model_name)
+    # registry.register_model(model_name, model_class)
+
+    model_class = registry.get_model(model_name)
+    if not model_class:
+        print(f"Recommender '{model_name}' is not found.")
 
     model_config = {"lr": 1e-4}
     model_config = merge_config_with_cmd_args(model_config)
@@ -121,7 +107,7 @@ def main():
                                  batch_size=run_config.test_batch_size,
                                  num_thread=run_config.test_thread)
 
-    model: AbstractRecommender = Model(dataset, model_config, evaluator)
+    model: AbstractRecommender = model_class(dataset, model_config, evaluator)
     logging.root.handlers = old_handlers
     model.fit()
 
