@@ -1,5 +1,5 @@
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 from .generic import OrderedDefaultDict
 from .generic import pad_sequences

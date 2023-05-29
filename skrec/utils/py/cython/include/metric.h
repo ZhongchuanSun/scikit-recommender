@@ -1,6 +1,6 @@
 /*
 @author: Zhongchuan Sun
-@email: zhongchuansun@foxmail.com
+@email: zhongchuansun@gmail.com
 */
 #ifndef METRIC_H
 #define METRIC_H

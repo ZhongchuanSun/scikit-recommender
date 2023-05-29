@@ -4,7 +4,7 @@ Author: Steffen Rendle, Christoph Freudenthaler, Zeno Gantner, and Lars Schmidt-
 """
 
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["BPRMF"]
 

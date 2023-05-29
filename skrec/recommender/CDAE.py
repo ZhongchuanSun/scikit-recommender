@@ -4,7 +4,7 @@ Author: Yao Wu, Christopher DuBois, Alice X. Zheng, and Martin Ester
 """
 
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["CDAE"]
 

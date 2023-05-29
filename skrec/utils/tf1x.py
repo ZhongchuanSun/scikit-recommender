@@ -1,5 +1,5 @@
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["inner_product", "bpr_loss", "l2_loss",
            "euclidean_distance", "l2_distance",

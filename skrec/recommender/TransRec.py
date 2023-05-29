@@ -5,7 +5,7 @@ Reference: https://drive.google.com/file/d/0B9Ck8jw-TZUEVmdROWZKTy1fcEE/view?usp
 """
 
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["TransRec"]
 

@@ -4,7 +4,7 @@ Author: Wang-Cheng Kang, and Julian McAuley
 Reference: https://github.com/kang205/SASRec
 """
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["SASRec"]
 

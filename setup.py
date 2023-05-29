@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 import setuptools
 from setuptools import setup
 from setuptools.extension import Extension
@@ -15,10 +16,13 @@ Intended Audience :: Science/Research
 License :: OSI Approved :: MIT License
 Operating System :: Microsoft :: Windows
 Operating System :: Unix
+Operating System :: MacOS
 Programming Language :: Python
 Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
+Programming Language :: Python :: 3.9
+Programming Language :: Python :: 3.10
 Programming Language :: Python :: Implementation :: CPython
 Topic :: Scientific/Engineering
 Topic :: Scientific/Engineering :: Artificial Intelligence
@@ -112,24 +116,20 @@ def setup_package():
     include_dirs = get_include_dirs("skrec")
     module_list = cythonize(extensions, annotate=False)
 
-    with open("README.md", "r") as fh:
-        long_description = fh.read()
-
-    install_requires = []
-
+    install_requires = ["numpy>=1.17", "scipy", "pandas", "colorama"]
     metadata = dict(
         name="scikit-recommender",  # Replace with your own username
         version=VERSION,
         author="ZhongchuanSun",
-        author_email="zhongchuansun@foxmail.com",
+        author_email="zhongchuansun@gmail.com",
         description="A science toolkit for recommender systems",
-        long_description=long_description,
+        long_description=Path("README.md").read_text(),
         long_description_content_type="text/markdown",
-        url="",
+        url="https://github.com/ZhongchuanSun/scikit-recommender",
         packages=setuptools.find_packages(),
         include_dirs=include_dirs,
         ext_modules=module_list,
-        platforms=["Windows", "Linux"],
+        platforms=["Windows", "Linux", "Mac OS"],
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         python_requires='>=3.6',
         install_requires=install_requires

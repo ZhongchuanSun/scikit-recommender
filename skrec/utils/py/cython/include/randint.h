@@ -1,6 +1,6 @@
 /*
 @author: Zhongchuan Sun
-@email: zhongchuansun@foxmail.com
+@email: zhongchuansun@gmail.com
 */
 #ifndef RANDINT_H
 #define RANDINT_H

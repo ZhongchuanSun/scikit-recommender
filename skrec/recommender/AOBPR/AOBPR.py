@@ -4,7 +4,7 @@ Author: Steffen Rendle, and Christoph Freudenthaler
 """
 
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["AOBPR"]
 

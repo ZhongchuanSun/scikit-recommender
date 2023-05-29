@@ -4,7 +4,7 @@ Author: Fei Sun, Jun Liu, Jian Wu, Changhua Pei, Xiao Lin, Wenwu Ou, and Peng Ji
 Reference: https://github.com/FeiSun/BERT4Rec
 """
 __author__ = "Zhongchuan Sun"
-__email__ = "zhongchuansun@foxmail.com"
+__email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["BERT4Rec"]
 
