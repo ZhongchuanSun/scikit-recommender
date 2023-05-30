@@ -17,7 +17,7 @@ import torch.nn.functional as F
 from typing import Dict
 from .base import AbstractRecommender
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
-from ..utils.py import RankingEvaluator, MetricReport
+from ..utils.py import RankingEvaluator
 from ..io import PairwiseIterator, Dataset
 import numpy as np
 import scipy.sparse as sp
@@ -176,8 +176,6 @@ class LightGCN(AbstractRecommender):
                                      shuffle=True, drop_last=False)
 
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
-        stop_counter = 0
-        best_result: MetricReport = None
         for epoch in range(self.config.epochs):
             self.lightgcn.train()
             for bat_users, bat_pos_items, bat_neg_items in data_iter:
@@ -203,14 +201,10 @@ class LightGCN(AbstractRecommender):
 
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            stop_counter += 1
-            if stop_counter > self.config.early_stop:
-                self.logger.info("early stop")
+            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
                 break
-            if best_result is None or cur_result["NDCG@10"] >= best_result["NDCG@10"]:
-                best_result = cur_result
-                stop_counter = 0
-        self.logger.info("best:".ljust(12) + f"\t{best_result.values_str}")
+
+        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
 
     def evaluate(self):
         self.lightgcn.eval()

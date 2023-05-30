@@ -14,7 +14,7 @@ from ..base import AbstractRecommender
 from ...io import PairwiseIterator
 from ...utils.py import randint_choice
 from ...utils.py import Config
-from ...utils.py import RankingEvaluator, MetricReport
+from ...utils.py import RankingEvaluator
 from ...io import Dataset
 from .pyx_aobpr_func import aobpr_update
 
@@ -71,8 +71,6 @@ class AOBPR(AbstractRecommender):
         user1d, pos_item1d, _ = list(data_iter)[0]
         len_data = len(user1d)
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
-        stop_counter = 0
-        best_result: MetricReport = None
         shuffle_idx = np.arange(len_data)
         for epoch in range(self.config.epochs):
             rank_idx = randint_choice(self.num_items, size=len_data,
@@ -82,18 +80,12 @@ class AOBPR(AbstractRecommender):
                          rank_idx, self.config.lr, self.config.reg,
                          self.user_embeds, self.item_embeds)
 
-            # self.logger.info("epoch %d:\t%s" % (epoch, self.evaluate_model()))
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            stop_counter += 1
-            if stop_counter > self.config.early_stop:
-                self.logger.info("early stop")
+            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
                 break
-            if best_result is None or cur_result["NDCG@10"] >= best_result["NDCG@10"]:
-                best_result = cur_result
-                stop_counter = 0
 
-        self.logger.info("best:".ljust(12) + f"\t{best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
 
     def evaluate(self):
         return self.evaluator.evaluate(self)

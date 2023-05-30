@@ -16,7 +16,7 @@ from typing import Dict
 from .base import AbstractRecommender
 from ..io import Dataset
 from ..utils.py import Config
-from ..utils.py import RankingEvaluator, MetricReport
+from ..utils.py import RankingEvaluator
 from ..utils.py import pad_sequences
 from ..utils.py import BatchIterator
 
@@ -197,8 +197,6 @@ class SRGNN(AbstractRecommender):
         train_seq_index, _ = list(zip(*train_seq_len))
 
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
-        stop_counter = 0
-        best_result: MetricReport = None
         for epoch in range(self.config.epochs):
             for bat_index in self._shuffle_index(train_seq_index):
                 item_seqs = [self.train_seq[idx] for idx in bat_index]
@@ -215,15 +213,10 @@ class SRGNN(AbstractRecommender):
 
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            stop_counter += 1
-            if stop_counter > self.config.early_stop:
-                self.logger.info("early stop")
+            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
                 break
-            if best_result is None or cur_result["NDCG@10"] >= best_result["NDCG@10"]:
-                best_result = cur_result
-                stop_counter = 0
 
-        self.logger.info("best:".ljust(12) + f"\t{best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
 
     def _shuffle_index(self, seq_index):
         """NOTE: two-step shuffle for saving memory"""
