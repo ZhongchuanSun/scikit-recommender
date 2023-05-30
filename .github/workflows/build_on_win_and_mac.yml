@@ -60,7 +60,8 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
 #        upload_url: ${{ steps.latest_release.outputs.upload_url }}
-        upload_url: https://uploads.github.com/repos/${{ github.owner }}/${{ github.repo }}/releases/latest/assets
+        upload_url: https://uploads.github.com/repos/${{ github.repository }}/releases/latest/assets
         asset_path: /dist/*.whl
         # asset_name: package.whl
         asset_content_type: application/zip
+        file_glob: true
