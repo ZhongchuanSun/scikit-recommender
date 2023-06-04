@@ -19,7 +19,8 @@ class RunConfig(Config):
                  gpu_id=0,
                  metric=("Precision", "Recall", "MAP", "NDCG", "MRR"),  # ("Precision", "Recall", "MAP", "NDCG", "MRR")
                  top_k=(10, 20, 30, 40, 50, 100),
-                 test_batch_size=64,  # large test_batch_size might cause GPU memory-consuming, especially dataset is large
+                 # large test_batch_size might cause GPU memory-consuming, especially dataset is large
+                 test_batch_size=64,
                  test_thread=4,
                  seed=2021,
                  **kwargs):
@@ -72,7 +73,7 @@ def _set_random_seed(seed=2020):
 def main():
     # read config
     run_config = {"recommender": "BPRMF",
-                  "data_dir": "dataset/Beauty_loo_u5_i5",
+                  "data_dir": "dataset/ml-100k_ratio_by_time_u5_i5",
                   "file_column": "UIRT",
                   "sep": ',',
                   "gpu_id": 0,
@@ -94,7 +95,7 @@ def main():
     if not model_class:
         print(f"Recommender '{model_name}' is not found.")
 
-    model_config = {"lr": 1e-4}
+    model_config = {"lr": 1e-3, "early_stop": 100, "lambda1": 0.0}
     model_config = merge_config_with_cmd_args(model_config)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)

@@ -83,11 +83,13 @@ def _sampling_negative_items(user_n_pos: OrderedDict, num_neg: int, num_items: i
     neg_items_list = []
     for user, n_pos in user_n_pos.items():
         neg_items = randint_choice(num_items, size=n_pos*num_neg, exclusion=user_pos_dict[user])
-        neg_items = neg_items if isinstance(neg_items, Iterable) else np.int32([neg_items])  # only one item
-        neg_items = np.reshape(neg_items, newshape=[n_pos, num_neg])
+        if num_neg == 1:
+            neg_items = neg_items if isinstance(neg_items, Iterable) else np.int32([neg_items])
+        else:
+            neg_items = np.reshape(neg_items, newshape=[n_pos, num_neg])
         neg_items_list.append(neg_items)
 
-    return np.concatenate(neg_items_list, axis=0)
+    return np.concatenate(neg_items_list)
 
 
 class PointwiseIterator(_Iterator):
@@ -157,7 +159,7 @@ class PointwiseIterator(_Iterator):
 
 
 class PairwiseIterator(_Iterator):
-    def __init__(self, dataset: ImplicitFeedback,
+    def __init__(self, dataset: ImplicitFeedback, num_neg: int=1,
                  batch_size: int=1024, shuffle: bool=True, drop_last: bool=False):
         """Initializes a new `PairwiseSampler` instance.
 
@@ -171,9 +173,12 @@ class PairwiseIterator(_Iterator):
                 Defaults to `False`.
         """
         super(PairwiseIterator, self).__init__()
+        if num_neg <= 0:
+            raise ValueError("'num_neg' must be a positive integer.")
 
         self.batch_size = batch_size
         self.shuffle = shuffle
+        self.num_neg = num_neg
         self.drop_last = drop_last
         self.num_items = dataset.num_items
         self.user_pos_dict = dataset.to_user_dict()
@@ -189,8 +194,8 @@ class PairwiseIterator(_Iterator):
             return (n_sample + self.batch_size - 1) // self.batch_size
 
     def __iter__(self):
-        neg_items = _sampling_negative_items(self.user_n_pos, 1, self.num_items,
-                                             self.user_pos_dict).squeeze()
+        neg_items = _sampling_negative_items(self.user_n_pos, self.num_neg,
+                                             self.num_items, self.user_pos_dict)
 
         data_iter = BatchIterator(self.all_users, self.pos_items, neg_items,
                                   batch_size=self.batch_size,
