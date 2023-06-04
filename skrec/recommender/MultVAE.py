@@ -16,7 +16,7 @@ from typing import List, Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
-from ..utils.py import RankingEvaluator
+from ..utils.py import RankingEvaluator, EarlyStopping
 from ..utils.py import BatchIterator
 from ..utils.torch import l2_loss, get_initializer
 
@@ -174,6 +174,7 @@ class MultVAE(AbstractRecommender):
         user_iter = BatchIterator(train_users, batch_size=self.config.batch_size, shuffle=True, drop_last=False)
 
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
+        early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
         update_count = 0.0
         for epoch in range(self.config.epochs):
             self.multvae.train()
@@ -204,10 +205,11 @@ class MultVAE(AbstractRecommender):
                 update_count += 1
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
+            if early_stopping(cur_result):
+                self.logger.info("early stop")
                 break
 
-        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
     def evaluate(self):
         self.multvae.eval()

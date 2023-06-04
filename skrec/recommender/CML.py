@@ -15,7 +15,7 @@ from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
-from ..utils.py import RankingEvaluator
+from ..utils.py import RankingEvaluator, EarlyStopping
 from ..utils.py import BatchIterator
 from ..utils.tf1x import euclidean_distance, hinge_loss
 from ..io.data_iterator import _generate_positive_items, _sampling_negative_items
@@ -158,6 +158,7 @@ class CML(AbstractRecommender):
     def fit(self):
         user_n_pos, all_users, pos_items = _generate_positive_items(self.user_pos_train)
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
+        early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
         for epoch in range(self.config.epochs):
             neg_items = _sampling_negative_items(user_n_pos, self.config.dns, self.num_items,
                                                  self.user_pos_train).squeeze()
@@ -171,10 +172,11 @@ class CML(AbstractRecommender):
 
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
+            if early_stopping(cur_result):
+                self.logger.info("early stop")
                 break
 
-        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
     def evaluate(self):
         return self.evaluator.evaluate(self)

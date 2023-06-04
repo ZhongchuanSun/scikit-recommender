@@ -15,7 +15,7 @@ import numpy as np
 from .base import AbstractRecommender
 from ..io import PairwiseIterator, Dataset
 from ..utils.torch import sp_mat_to_sp_tensor
-from ..utils.py import RankingEvaluator
+from ..utils.py import RankingEvaluator, EarlyStopping
 from ..utils.py import Config
 
 
@@ -219,6 +219,7 @@ class LightGCL(AbstractRecommender):
                                      batch_size=self.config.batch_size,
                                      shuffle=True, drop_last=False)
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
+        early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
         for epoch in range(self.config.epochs):
             self.model.train()
             for uids, pos, neg in data_iter:
@@ -233,14 +234,15 @@ class LightGCL(AbstractRecommender):
                 loss.backward()
                 self.optimizer.step()
                 # torch.cuda.empty_cache()
-            result = self.evaluate_model()
+            result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{result.values_str}")
-            if self.is_early_stop(result, stop_epochs=self.config.early_stop):
+            if early_stopping(result):
+                self.logger.info("early stop")
                 break
 
-        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
-    def evaluate_model(self):
+    def evaluate(self):
         self.model.eval()
         return self.evaluator.evaluate(self)
 

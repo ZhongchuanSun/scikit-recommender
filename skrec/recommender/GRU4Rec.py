@@ -14,7 +14,7 @@ import numpy as np
 import tensorflow as tf
 from typing import List, Dict
 from .base import AbstractRecommender
-from ..utils.py import RankingEvaluator
+from ..utils.py import RankingEvaluator, EarlyStopping
 from ..io import Dataset
 from ..utils.py import Config
 from ..utils.tf1x import bpr_loss, l2_loss
@@ -172,7 +172,7 @@ class GRU4Rec(AbstractRecommender):
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
         data_ui, offset_idx = self.data_ui, self.offset_idx
         data_items = data_ui[:, 1]
-
+        early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
         for epoch in range(self.config.epochs):
             state = [np.zeros([self.config.batch_size, n_unit], dtype=np.float32) for n_unit in self.config.layers]
             user_idx = np.random.permutation(len(offset_idx) - 1)
@@ -211,10 +211,11 @@ class GRU4Rec(AbstractRecommender):
 
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
+            if early_stopping(cur_result):
+                self.logger.info("early stop")
                 break
 
-        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
     def _get_user_embeddings(self):
         users = np.array(list(self.user_pos_train.keys()), dtype=np.int32)

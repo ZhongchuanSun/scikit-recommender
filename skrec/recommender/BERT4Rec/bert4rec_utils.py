@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import tensorflow as tf
 from . import modeling, optimization
-from ...utils.py import MetricReport
+from ...utils.py import MetricReport, EarlyStopping
 from ...utils.py.cython import eval_score_matrix
 
 
@@ -33,9 +33,8 @@ class EvalHooks(tf.train.SessionRunHook):
 
         self._logger.info("metrics:".ljust(12)+f"\t{self._evaluator.metrics_str}")
         # self._logger.info(self._evaluator.metrics_info())
-        self.counter = 0
-        self._best_result: MetricReport = None
         self._epoch = 0
+        self.early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
 
     def begin(self):
         self._eval_results = []
@@ -50,14 +49,11 @@ class EvalHooks(tf.train.SessionRunHook):
         self._logger.info(f"test:".ljust(12)+f"\t{cur_result.values_str}")
 
         self.counter += 1
-        if self._epoch >= 80 and self.counter > self.config.early_stop:
+        if self._epoch >= 80 and self.early_stopping(cur_result):
             self._logger.info("early stop")
-            self._logger.info("best:".ljust(12)+f"\t{self._best_result.values_str}")
+            self._logger.info("best:".ljust(12)+f"\t{self.early_stopping.best_result.values_str}")
             exit(0)
 
-        if self._best_result is None or cur_result["NDCG@10"] >= self._best_result["NDCG@10"]:
-            self._best_result = cur_result
-            self.counter = 0
         self._epoch += 1
 
     def before_run(self, run_context):

@@ -50,26 +50,3 @@ class AbstractRecommender(object):
 
     def predict(self, users: Union[List[int], np.ndarray]) -> np.ndarray:
         raise NotImplementedError
-
-    def is_early_stop(self, new_result: MetricReport, cmp_metric: str="NDCG@10", stop_epochs: int=50) -> bool:
-        if not hasattr(self, "xx_best_result_"):
-            self.xx_best_result_: MetricReport = new_result
-            self.xx_stop_counter_ = 0
-
-        self.xx_stop_counter_ += 1
-        if 0 < stop_epochs < self.xx_stop_counter_:
-            self.logger.info("early stop")
-            return True
-
-        if new_result[cmp_metric] > self.xx_best_result_[cmp_metric]:
-            self.xx_best_result_ = new_result
-            self.xx_stop_counter_ = 0
-
-        return False
-
-    @property
-    def best_result(self) -> MetricReport:
-        if hasattr(self, "xx_best_result_"):
-            return self.xx_best_result_
-        else:
-            return MetricReport(["None"], [0])

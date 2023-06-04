@@ -15,7 +15,7 @@ from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
-from ..utils.py import RankingEvaluator, MetricReport
+from ..utils.py import RankingEvaluator, EarlyStopping
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..io import PairwiseIterator
 
@@ -101,6 +101,7 @@ class BPRMF(AbstractRecommender):
                                      shuffle=True, drop_last=False)
 
         self.logger.info("metrics:".ljust(12)+f"\t{self.evaluator.metrics_str}")
+        early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
         for epoch in range(self.config.epochs):
             self.mf.train()
             for bat_users, bat_pos_items, bat_neg_items in data_iter:
@@ -124,10 +125,11 @@ class BPRMF(AbstractRecommender):
 
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12)+f"\t{cur_result.values_str}")
-            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
+            if early_stopping(cur_result):
+                self.logger.info("early stop")
                 break
 
-        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
     def evaluate(self):
         self.mf.eval()

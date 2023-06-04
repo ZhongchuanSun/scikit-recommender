@@ -84,6 +84,7 @@ class BERT4Rec(AbstractRecommender):
         self._build_model()
 
     def _prepare_data(self):
+        self.logger.info("prepare data...")
         output_dir = self.dataset.data_dir
         tf_record_name = [f"max_seq_len={self.config.max_seq_len}",
                           f"masked_lm_prob={self.config.masked_lm_prob}",
@@ -112,6 +113,7 @@ class BERT4Rec(AbstractRecommender):
         self.num_instances = np.load(num_trains_file)
 
     def _build_model(self):
+        self.logger.info("build model...")
         config = self.config
         bert_config = modeling.BertConfig(self.item_size,
                                           hidden_size=config.h_size,
@@ -184,3 +186,4 @@ class BERT4Rec(AbstractRecommender):
                                  max_steps=cur_steps+self.steps_per_epoch*config.verbose)
             cur_steps += self.steps_per_epoch*config.verbose
             self.estimator.evaluate(input_fn=self.eval_input_fn, steps=None, hooks=[eval_hook])
+        self.logger.info("best:".ljust(12) + f"\t{eval_hook.early_stopping.best_result.values_str}")

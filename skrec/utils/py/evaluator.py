@@ -1,7 +1,7 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["MetricReport", "RankingEvaluator", "MetricReport"]
+__all__ = ["MetricReport", "RankingEvaluator", "EarlyStopping"]
 
 from typing import Sequence, Dict, Union, Optional, Tuple, List, Iterable
 from collections import OrderedDict
@@ -206,3 +206,31 @@ class RankingEvaluator(object):
 
         final_results = np.reshape(final_results, newshape=[-1])
         return MetricReport(self.metrics_list, final_results)
+
+
+class EarlyStopping:
+    def __init__(self, metric: str="NDCG@10", patience: int=100):
+        self._metric: str = metric
+        self._patience: int = patience  # Number of epochs to wait for improvement
+        self._best_score: MetricReport = None  # Current best score of the monitored metric
+        self._counter: int = 0  # Counter for the number of epochs without improvement
+
+    def __call__(self, val_result: MetricReport):
+        if self._best_score is None:
+            self._best_score = val_result
+        elif val_result[self._metric] <= self._best_score[self._metric]:
+            self._counter += 1
+            if self._counter >= self._patience > 0:
+                return True  # Trigger the stop condition for training
+        else:
+            self._best_score = val_result
+            self._counter = 0
+
+        return False  # Continue training
+
+    @property
+    def best_result(self) -> MetricReport:
+        if self._best_score is not None:
+            return self._best_score
+        else:
+            return MetricReport(["None"], [0])

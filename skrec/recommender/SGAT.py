@@ -14,13 +14,13 @@ import numpy as np
 import tensorflow as tf
 import scipy.sparse as sp
 from typing import Dict
+from collections import defaultdict
 from .base import AbstractRecommender
 from ..utils.py import Config
 from ..io import Dataset
-from ..utils.py import RankingEvaluator
+from ..utils.py import RankingEvaluator, EarlyStopping
 from ..utils.py import pad_sequences
 from ..utils.tf1x import bpr_loss, l2_loss, l2_distance
-from collections import defaultdict
 from ..io import SequentialPairwiseIterator
 from ..utils.common import normalize_adj_matrix
 
@@ -311,6 +311,7 @@ class SGAT(AbstractRecommender):
                                                shuffle=True, drop_last=False)
 
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
+        early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
         for epoch in range(self.config.epochs):
             for bat_users, bat_head, bat_pos_tail, bat_neg_tail in data_iter:
                 feed = {self.user_ph: bat_users,
@@ -322,10 +323,11 @@ class SGAT(AbstractRecommender):
 
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
+            if early_stopping(cur_result):
+                self.logger.info("early stop")
                 break
 
-        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
     def evaluate(self):
         self.sess.run(self.assign_opt)

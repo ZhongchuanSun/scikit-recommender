@@ -16,5 +16,6 @@ from .random import batch_randint_choice
 
 from .evaluator import RankingEvaluator
 from .evaluator import MetricReport
+from .evaluator import EarlyStopping
 
 from .config import Config, merge_config_with_cmd_args

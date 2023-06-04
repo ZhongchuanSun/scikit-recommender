@@ -10,13 +10,13 @@ __all__ = ["SASRec"]
 
 import numpy as np
 from typing import Dict
+import tensorflow as tf
 from .base import AbstractRecommender
-from ..utils.py import RankingEvaluator
+from ..utils.py import RankingEvaluator, EarlyStopping
 from ..io import Dataset
 from ..utils.tf1x import inner_product
 from ..utils.py import pad_sequences, batch_randint_choice, BatchIterator
 from ..utils.py import Config
-import tensorflow as tf
 
 
 def normalize(inputs,
@@ -469,7 +469,7 @@ class SASRec(AbstractRecommender):
     def fit(self):
         item_seq_list, item_pos_list = self._generate_train_data()
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")
-
+        early_stopping = EarlyStopping(metric="NDCG@10", patience=self.config.early_stop)
         for epoch in range(self.config.epochs):
             item_neg_list = self._sample_negative()
             data = BatchIterator(item_seq_list, item_pos_list, item_neg_list,
@@ -484,10 +484,11 @@ class SASRec(AbstractRecommender):
 
             cur_result = self.evaluate()
             self.logger.info(f"epoch {epoch}:".ljust(12) + f"\t{cur_result.values_str}")
-            if self.is_early_stop(cur_result, stop_epochs=self.config.early_stop):
+            if early_stopping(cur_result):
+                self.logger.info("early stop")
                 break
 
-        self.logger.info("best:".ljust(12) + f"\t{self.best_result.values_str}")
+        self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
     def evaluate(self):
         return self.evaluator.evaluate(self)
