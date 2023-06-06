@@ -9,13 +9,13 @@ import pickle
 import warnings
 from typing import Dict, Callable
 from copy import deepcopy
-from functools import wraps
+import functools
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
-import weakref
-from ..utils.py import pad_sequences, md5sum
+import atexit
+from ..utils.py import pad_sequences
 
 _USER = "user"
 _ITEM = "item"
@@ -28,57 +28,55 @@ _DColumns = {"UI": [_USER, _ITEM],
              }
 
 
-class Interaction(object):
+class DataCacheABC(object):
     def __init__(self):
-        self._buffer = dict()
-        self._buffer_modified_flag = False
+        self._cache_buffer = dict()
+        self._cache_modified = False
 
-    def is_empty(self) -> bool:
-        raise NotImplementedError
+    def _is_cached(self, key) -> bool:
+        return key in self._cache_buffer
 
-    def _exist_in_buffer(self, name):
-        return name in self._buffer
+    def _get_from_cache(self, key):
+        return deepcopy(self._cache_buffer[key])
 
-    def _write_to_buffer(self, name, value):
-        self._buffer[name] = value
-        self._buffer_modified_flag = True
+    def _set_to_cache(self, key, value):
+        self._cache_buffer[key] = value
+        self._cache_modified = True
 
-    def _read_from_buffer(self, name):
-        return deepcopy(self._buffer[name])
+    def clear_cache(self):
+        self._cache_buffer.clear()
+        self._cache_modified = True
 
-    def _clean_buffer(self):
-        self._buffer.clear()
-        self._buffer_modified_flag = True
+    def loads_cached_data(self, cached_data: Dict):
+        self._cache_buffer = deepcopy(cached_data)
 
-    def is_buffer_modified(self):
-        return self._buffer_modified_flag
+    def dumps_cached_data(self) -> Dict:
+        return deepcopy(self._cache_buffer)
 
-    def reset_buffer_flag(self):
-        self._buffer_modified_flag = False
-
-    def __setstate__(self, state):
-        self.__dict__ = state
-        self.reset_buffer_flag()  # reset flag after pickle.load()
+    def is_cache_modified(self) -> bool:
+        return self._cache_modified
 
 
-def fetch_data(data_generator):
+def data_cache(func):
     # read from buffer
-    @wraps(data_generator)
-    def wrapper(self: Interaction, *args, **kwargs):
-        _data_name = data_generator.__name__
-        if self.is_empty():
-            raise ValueError("data is empty!")
+    @functools.wraps(func)
+    def wrapper(self: DataCacheABC, *args, **kwargs):
+        # Generate a cache key based on the function name and arguments
+        cache_key = pickle.dumps((func.__name__, args, kwargs))
 
-        if self._exist_in_buffer(_data_name) is False:
-            _data = data_generator(self, *args, **kwargs)
-            self._write_to_buffer(_data_name, _data)
-
-        return self._read_from_buffer(_data_name)
+        if self._is_cached(cache_key):
+            # If the cached result exists, retrieve and return it
+            return self._get_from_cache(cache_key)
+        else:
+            # Otherwise, process the data and store the result in the cache
+            result = func(self, *args, **kwargs)
+            self._set_to_cache(cache_key, result)
+            return result
 
     return wrapper
 
 
-class ImplicitFeedback(Interaction):
+class ImplicitFeedback(DataCacheABC):
     def __init__(self, data: pd.DataFrame=None, num_users: int=None, num_items: int=None):
         super(ImplicitFeedback, self).__init__()
         assert data is None or isinstance(data, pd.DataFrame)
@@ -97,12 +95,12 @@ class ImplicitFeedback(Interaction):
     def is_empty(self) -> bool:
         return self._data is None or self._data.empty
 
-    @fetch_data
+    @data_cache
     def to_user_item_pairs(self) -> np.ndarray:
         ui_pairs = self._data[[_USER, _ITEM]].to_numpy(copy=True, dtype=np.int32)
         return ui_pairs
 
-    @fetch_data
+    @data_cache
     def to_user_item_pairs_by_time(self) -> np.ndarray:
         if _TIME not in self._data:
             raise ValueError("This dataset do not contain timestamp.")
@@ -111,26 +109,26 @@ class ImplicitFeedback(Interaction):
         data_ui = data_uit[[_USER, _ITEM]].to_numpy(copy=True, dtype=np.int32)
         return data_ui
 
-    @fetch_data
+    @data_cache
     def to_csr_matrix(self) -> sp.csr_matrix:
         users, items = self._data[_USER].to_numpy(), self._data[_ITEM].to_numpy()
         ratings = np.ones(len(users), dtype=np.float32)
         csr_mat = sp.csr_matrix((ratings, (users, items)), shape=(self.num_users, self.num_items), copy=True)
         return csr_mat
 
-    @fetch_data
+    @data_cache
     def to_csc_matrix(self) -> sp.csc_matrix:
         return self.to_csr_matrix().tocsc()
 
-    @fetch_data
+    @data_cache
     def to_dok_matrix(self) -> sp.dok_matrix:
         return self.to_csr_matrix().todok()
 
-    @fetch_data
+    @data_cache
     def to_coo_matrix(self) -> sp.coo_matrix:
         return self.to_csr_matrix().tocoo()
 
-    @fetch_data
+    @data_cache
     def to_user_dict(self) -> Dict[int, np.ndarray]:
         user_dict = OrderedDict()
         user_grouped = self._data.groupby(_USER)
@@ -138,7 +136,7 @@ class ImplicitFeedback(Interaction):
             user_dict[user] = user_data[_ITEM].to_numpy(dtype=np.int32)
         return user_dict
 
-    @fetch_data
+    @data_cache
     def to_user_dict_by_time(self) -> Dict[int, np.ndarray]:
         # in chronological
         if _TIME not in self._data:
@@ -152,7 +150,7 @@ class ImplicitFeedback(Interaction):
 
         return user_dict
 
-    @fetch_data
+    @data_cache
     def to_item_dict(self) -> Dict[int, np.ndarray]:
         item_dict = OrderedDict()
         item_grouped = self._data.groupby(_ITEM)
@@ -161,6 +159,7 @@ class ImplicitFeedback(Interaction):
 
         return item_dict
 
+    @data_cache
     def to_truncated_seq_dict(self, max_len: int, pad_value: int=0,
                               padding='pre', truncating='pre') -> Dict[int, np.ndarray]:
         user_seq_dict = self.to_user_dict_by_time()
@@ -216,9 +215,10 @@ class Dataset(object):
         self.num_items = 0
         self.num_ratings = 0
         self._my_md5 = ""
-        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + ".pkl")
+        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + ".bin")
         self._load_data(sep, columns)
-        weakref.finalize(self, self._destructor)
+        self._load_cached_data()
+        atexit.register(self._dump_cached_data)
 
     @property
     def data_name(self):
@@ -231,38 +231,6 @@ class Dataset(object):
     @property
     def _file_prefix(self):
         return os.path.join(self.data_dir, self.data_name)
-
-    def _load_data(self, sep, columns):
-        if os.path.exists(self._cache_file):
-            try:
-                with open(self._cache_file, 'rb') as fin:
-                    _t_data: Dataset = pickle.load(fin)
-                if _t_data._my_md5 == self._raw_md5:
-                    _t_data._data_dir = self._data_dir  # keep data path up-to-date
-                    self.__dict__ = _t_data.__dict__
-                    return
-            except EOFError as e:
-                pass
-
-        self._load_from_raw(sep, columns)
-
-    def _dump_data(self):
-        with open(self._cache_file, 'wb') as fout:
-            pickle.dump(self, fout)
-
-    def _destructor(self):
-        if self.train_data.is_buffer_modified() or \
-                self.valid_data.is_buffer_modified() or \
-                self.test_data.is_buffer_modified():
-            self._dump_data()
-
-    @property
-    def _raw_md5(self):
-        files = [self._file_prefix+postfix for postfix in (".train", ".valid", ".test")
-                 if os.path.isfile(self._file_prefix+postfix)]
-        md5summary = md5sum(*files)
-        md5summary = "_".join([md5 for md5 in md5summary if md5 is not None])
-        return md5summary
 
     @staticmethod
     def _read_csv(csv_file, sep, header, names, handle: Callable=lambda x: x):
@@ -285,7 +253,7 @@ class Dataset(object):
             warnings.warn(f"'{map_file}' does not exist.")
         return maps, reverses
 
-    def _load_from_raw(self, sep, columns):
+    def _load_data(self, sep, columns):
         if columns not in _DColumns:
             key_str = ", ".join(_DColumns.keys())
             raise ValueError("'columns' must be one of '%s'." % key_str)
@@ -294,15 +262,12 @@ class Dataset(object):
 
         # load data
         def raise_error(err: str): raise FileNotFoundError(err)
-        _train_data = self._read_csv(self._file_prefix + ".train",
-                                     sep=sep, header=None, names=columns,
-                                     handle=raise_error)
-        _valid_data = self._read_csv(self._file_prefix + ".valid",
-                                     sep=sep, header=None, names=columns,
-                                     handle=warnings.warn)
-        _test_data = self._read_csv(self._file_prefix + ".test",
-                                    sep=sep, header=None, names=columns,
-                                    handle=raise_error)
+        _train_data = self._read_csv(self._file_prefix + ".train", sep=sep, names=columns,
+                                     header=None, handle=raise_error)
+        _valid_data = self._read_csv(self._file_prefix + ".valid", sep=sep, names=columns,
+                                     header=None, handle=warnings.warn)
+        _test_data = self._read_csv(self._file_prefix + ".test", sep=sep, names=columns,
+                                    header=None, handle=raise_error)
         if _train_data.isnull().values.any():
             warnings.warn(f"'Training data has None value, please check the file or the separator.")
         if _valid_data.isnull().values.any():
@@ -319,13 +284,50 @@ class Dataset(object):
         self.num_items = max([d[1] for d in data_info]) + 1
         self.num_ratings = sum([d[2] for d in data_info])
 
-        # convert to to the object of Interaction
+        # convert to to the object of ImplicitFeedback
         self.train_data = ImplicitFeedback(_train_data, num_users=self.num_users, num_items=self.num_items)
         self.valid_data = ImplicitFeedback(_valid_data, num_users=self.num_users, num_items=self.num_items)
         self.test_data = ImplicitFeedback(_test_data, num_users=self.num_users, num_items=self.num_items)
 
-        self._my_md5 = self._raw_md5
-        self._dump_data()
+    def _is_data_updated(self):
+        if not os.path.exists(self._cache_file):
+            return True
+        cached_time = os.path.getmtime(self._cache_file)
+
+        for file_suffix in [".train", ".test", ".valid"]:
+            filename = self._file_prefix + file_suffix
+            if os.path.exists(filename) and \
+                    os.path.getmtime(filename) > cached_time:
+                return True
+        return False
+
+    def _load_cached_data(self):
+        if self._is_data_updated():
+            return
+        # load cached data
+        try:
+            with open(self._cache_file, 'rb') as fin:
+                _t_data = pickle.load(fin)
+
+            self.train_data.loads_cached_data(_t_data["train_data"])
+            self.test_data.loads_cached_data(_t_data["test_data"])
+            self.valid_data.loads_cached_data(_t_data["valid_data"])
+        except Exception as e:
+            warnings.warn(f"load_cached_data error: {e}")
+
+    def _dump_cached_data(self):
+        if self.train_data.is_cache_modified() or \
+                self.valid_data.is_cache_modified() or \
+                self.test_data.is_cache_modified():
+            _t_data = dict()
+            _t_data["train_data"] = self.train_data.dumps_cached_data()
+            _t_data["test_data"] = self.test_data.dumps_cached_data()
+            _t_data["valid_data"] = self.valid_data.dumps_cached_data()
+            try:
+                with open(self._cache_file, 'wb') as fout:
+                    pickle.dump(_t_data, fout)
+            except Exception as e:
+                warnings.warn(f"_dump_cached_data error: {e}")
 
     @property
     def statistic_info(self):
