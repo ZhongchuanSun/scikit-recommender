@@ -15,8 +15,7 @@ import numpy as np
 import tensorflow as tf
 from typing import List, Dict
 from .base import AbstractRecommender
-from ..utils.py import RankingEvaluator, EarlyStopping
-from ..io import Dataset
+from ..utils.py import EarlyStopping
 from ..utils.py import Config
 from ..utils.tf1x import l2_loss
 
@@ -36,7 +35,7 @@ class GRU4RecPlusConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(GRU4RecPlusConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.bpr_reg: float = bpr_reg
@@ -67,12 +66,9 @@ class GRU4RecPlusConfig(Config):
 
 
 class GRU4RecPlus(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = GRU4RecPlusConfig(**cfg_dict)
-        super(GRU4RecPlus, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
+        config: GRU4RecPlusConfig = self.config
 
         if config.hidden_act == "relu":
             self.hidden_act = tf.nn.relu
@@ -113,6 +109,10 @@ class GRU4RecPlus(AbstractRecommender):
         tf_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
+
+    @property
+    def config_class(self):
+        return GRU4RecPlusConfig
 
     def _init_data(self):
         data_ui = self.dataset.train_data.to_user_item_pairs_by_time()

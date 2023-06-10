@@ -14,8 +14,8 @@ from typing import Dict
 import scipy.sparse as sp
 from collections import defaultdict
 from .base import AbstractRecommender
-from ..io import PairwiseIterator, Dataset
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..io import PairwiseIterator
+from ..utils.py import EarlyStopping
 from ..utils.py import Config
 
 
@@ -40,7 +40,7 @@ class DENSConfig(Config):
                  epochs=1000,
                  early_stop=100,
                  **kwargs):
-        super(DENSConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.l2: float = l2
         self.gamma: float = gamma
@@ -412,12 +412,8 @@ def build_sparse_graph(data_cf, n_users, n_items):
 
 
 class DENS(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = DENSConfig(**cfg_dict)
-        super(DENS, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.user_gcn_emb, self.item_gcn_emb = None, None
 
@@ -431,8 +427,12 @@ class DENS(AbstractRecommender):
         train_cf = self.dataset.train_data.to_user_item_pairs()
         norm_mat = build_sparse_graph(train_cf, self.num_users, self.num_items)
 
-        self.model = _DENS(self.num_users, self.num_items, config, norm_mat, self.device).to(self.device)
+        self.model = _DENS(self.num_users, self.num_items, self.config, norm_mat, self.device).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), weight_decay=0, lr=self.config.lr)
+
+    @property
+    def config_class(self):
+        return DENSConfig
 
     def fit(self):
         data_iter = PairwiseIterator(self.dataset.train_data,

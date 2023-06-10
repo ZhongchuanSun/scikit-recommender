@@ -19,8 +19,8 @@ import numpy as np
 import scipy.sparse as sp
 from .base import AbstractRecommender
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
-from ..utils.py import RankingEvaluator, EarlyStopping
-from ..io import PairwiseIterator, Dataset
+from ..utils.py import EarlyStopping
+from ..io import PairwiseIterator
 from ..utils.common import normalize_adj_matrix
 from ..utils.torch import sp_mat_to_sp_tensor
 from ..utils.py import Config
@@ -37,7 +37,7 @@ class LightGCNConfig(Config):
                  epochs=1000,
                  early_stop=100,
                  **kwargs):
-        super(LightGCNConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -112,12 +112,10 @@ class _LightGCN(nn.Module):
 
 
 class LightGCN(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = LightGCNConfig(**cfg_dict)
-        super(LightGCN, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
+        config = self.config
+
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -127,6 +125,10 @@ class LightGCN(AbstractRecommender):
         self.lightgcn = _LightGCN(self.num_users, self.num_items, config.embed_size,
                                   adj_matrix, config.n_layers).to(self.device)
         self.optimizer = torch.optim.Adam(self.lightgcn.parameters(), lr=config.lr)
+
+    @property
+    def config_class(self):
+        return LightGCNConfig
 
     def _load_adj_mat(self, adj_type):
         output_dir = self.dataset.data_dir

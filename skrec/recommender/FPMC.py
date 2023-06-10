@@ -14,9 +14,8 @@ import torch.nn as nn
 import numpy as np
 from typing import Dict
 from .base import AbstractRecommender
-from ..io import Dataset
 from ..utils.py import Config
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.torch import get_initializer
 from ..utils.torch import bpr_loss, l2_loss, inner_product
 from ..io import SequentialPairwiseIterator
@@ -31,7 +30,7 @@ class FPMCConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(FPMCConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -89,19 +88,19 @@ class _FPMC(nn.Module):
 
 
 class FPMC(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = FPMCConfig(**cfg_dict)
-        super(FPMC, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.user_pos_dict = self.dataset.train_data.to_user_dict_by_time()
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.fpmc = _FPMC(self.num_users, self.num_items, config.embed_size).to(self.device)
-        self.optimizer = torch.optim.Adam(self.fpmc.parameters(), lr=config.lr)
+        self.fpmc = _FPMC(self.num_users, self.num_items, self.config.embed_size).to(self.device)
+        self.optimizer = torch.optim.Adam(self.fpmc.parameters(), lr=self.config.lr)
+
+    @property
+    def config_class(self):
+        return FPMCConfig
 
     def fit(self):
         data_iter = SequentialPairwiseIterator(self.dataset.train_data,

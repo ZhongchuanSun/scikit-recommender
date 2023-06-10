@@ -14,9 +14,8 @@ import numpy as np
 import tensorflow as tf
 from typing import Dict
 from .base import AbstractRecommender
-from ..io import Dataset
 from ..utils.py import Config
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.py import pad_sequences
 from ..utils.py import BatchIterator
 
@@ -35,7 +34,7 @@ class SRGNNConfig(Config):
                  epochs=500,
                  early_stop=50,
                  **kwargs):
-        super(SRGNNConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.l2_reg: float = l2_reg
         self.hidden_size: int = hidden_size
@@ -65,12 +64,8 @@ class SRGNNConfig(Config):
 
 
 class SRGNN(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = SRGNNConfig(**cfg_dict)
-        super(SRGNN, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.num_users, self.num_item = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict_by_time()
@@ -87,6 +82,10 @@ class SRGNN(AbstractRecommender):
         tf_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
+
+    @property
+    def config_class(self):
+        return SRGNNConfig
 
     def _create_variable(self):
         self.mask_ph = tf.placeholder(dtype=tf.float32, shape=[self.config.batch_size, None])

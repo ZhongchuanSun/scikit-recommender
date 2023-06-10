@@ -15,9 +15,8 @@ import numpy as np
 import torch.nn.functional as F
 from typing import Dict
 from .base import AbstractRecommender
-from ..io import Dataset
 from ..utils.py import Config
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.torch import get_initializer
 from ..utils.torch import sigmoid_cross_entropy
 from ..io import SequentialPairwiseIterator
@@ -37,7 +36,7 @@ class CaserConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(CaserConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.l2_reg: float = l2_reg
         self.embed_size: int = embed_size
@@ -164,12 +163,8 @@ class _Caser(nn.Module):
 
 
 class Caser(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = CaserConfig(**cfg_dict)
-        super(Caser, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.pad_idx = self.num_items
@@ -180,8 +175,12 @@ class Caser(AbstractRecommender):
                                                                                 padding='pre', truncating='pre')
 
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.caser = _Caser(self.num_users, self.num_items, self.config.embed_size, config).to(self.device)
+        self.caser = _Caser(self.num_users, self.num_items, self.config.embed_size, self.config).to(self.device)
         self.optimizer = torch.optim.Adam(self.caser.parameters(), weight_decay=self.config.l2_reg, lr=self.config.lr)
+
+    @property
+    def config_class(self):
+        return CaserConfig
 
     def fit(self):
         data_iter = SequentialPairwiseIterator(self.dataset.train_data,

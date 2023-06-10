@@ -6,6 +6,7 @@ __email__ = "zhongchuansun@gmail.com"
 from .io import *
 from .utils.py import *
 from .utils import *
+from .run_config import RunConfig
 
 import colorama
 colorama.init()

@@ -15,8 +15,7 @@ import torch.nn.functional as F
 from typing import List, Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
-from ..io import Dataset
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.py import BatchIterator
 from ..utils.torch import l2_loss, get_initializer
 
@@ -34,7 +33,7 @@ class MultVAEConfig(Config):
                  epochs=1000,
                  early_stop=200,
                  **kwargs):
-        super(MultVAEConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         # p_dims is decoder's dimensions and q_dims is encoder's dimensions
@@ -143,12 +142,9 @@ class _MultVAE(nn.Module):
 
 
 class MultVAE(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = MultVAEConfig(**cfg_dict)
-        super(MultVAE, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
+        config = self.config
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.train_csr_mat = self.dataset.train_data.to_csr_matrix()
@@ -168,6 +164,10 @@ class MultVAE(AbstractRecommender):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.multvae = _MultVAE(self.q_dims, self.p_dims, self.config.keep_prob).to(self.device)
         self.optimizer = torch.optim.Adam(self.multvae.parameters(), lr=self.config.lr)
+
+    @property
+    def config_class(self):
+        return MultVAEConfig
 
     def fit(self):
         train_users = [user for user in range(self.num_users) if self.train_csr_mat[user].nnz]

@@ -14,8 +14,7 @@ from ..base import AbstractRecommender
 from ...io import PairwiseIterator
 from ...utils.py import randint_choice
 from ...utils.py import Config
-from ...utils.py import RankingEvaluator, EarlyStopping
-from ...io import Dataset
+from ...utils.py import EarlyStopping
 from .pyx_aobpr_func import aobpr_update
 
 
@@ -28,7 +27,7 @@ class AOBPRConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(AOBPRConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -47,12 +46,8 @@ class AOBPRConfig(Config):
 
 
 class AOBPR(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = AOBPRConfig(**cfg_dict)
-        super(AOBPR, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
 
         low, high = 0.0, 1.0
@@ -62,6 +57,10 @@ class AOBPR(AbstractRecommender):
         rank = np.arange(1, self.num_items+1)
         rank_prob = np.exp(-rank/self.config.alpha)
         self.rank_prob = rank_prob/np.sum(rank_prob)
+
+    @property
+    def config_class(self):
+        return AOBPRConfig
 
     def fit(self):
         data_iter = PairwiseIterator(self.dataset.train_data,

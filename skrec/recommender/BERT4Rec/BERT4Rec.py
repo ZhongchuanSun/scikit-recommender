@@ -14,9 +14,7 @@ import time
 import pickle
 from typing import Dict
 from skrec.utils.py import Config
-from skrec.io import Dataset
 from skrec.recommender.base import AbstractRecommender
-from skrec.utils.py import RankingEvaluator
 from . import modeling
 import tensorflow as tf
 from .bert4rec_utils import model_fn_builder, input_fn_builder, EvalHooks
@@ -47,7 +45,7 @@ class BERT4RecConfig(Config):
                  verbose=10,
                  pool_size=10,
                  **kwargs):
-        super(BERT4RecConfig, self).__init__()
+        super().__init__()
         # prepare data
         self.max_seq_len: int = max_seq_len
         self.masked_lm_prob: float = masked_lm_prob
@@ -74,14 +72,14 @@ class BERT4RecConfig(Config):
 
 
 class BERT4Rec(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = BERT4RecConfig(**cfg_dict)
-        super(BERT4Rec, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
         self._prepare_data()
         self._build_model()
+
+    @property
+    def config_class(self):
+        return BERT4RecConfig
 
     def _prepare_data(self):
         self.logger.info("prepare data...")

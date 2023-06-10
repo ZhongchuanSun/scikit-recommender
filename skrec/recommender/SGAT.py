@@ -17,8 +17,7 @@ from typing import Dict
 from collections import defaultdict
 from .base import AbstractRecommender
 from ..utils.py import Config
-from ..io import Dataset
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.py import pad_sequences
 from ..utils.tf1x import bpr_loss, l2_loss, l2_distance
 from ..io import SequentialPairwiseIterator
@@ -37,7 +36,7 @@ class SGATConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(SGATConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.n_layers: int = n_layers
@@ -74,12 +73,8 @@ def mexp(x, tau=1.0):
 
 
 class SGAT(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = SGATConfig(**cfg_dict)
-        super(SGAT, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.users_num, self.items_num = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict_by_time()
@@ -90,6 +85,10 @@ class SGAT(AbstractRecommender):
         tf_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
+
+    @property
+    def config_class(self):
+        return SGATConfig
 
     def _process_test(self):
         item_seqs = [self.user_pos_train[user][-self.config.n_seqs:] if user in self.user_pos_train else [self.items_num]

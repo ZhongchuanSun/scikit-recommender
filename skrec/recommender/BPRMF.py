@@ -14,8 +14,7 @@ import numpy as np
 from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
-from ..io import Dataset
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..io import PairwiseIterator
 
@@ -29,7 +28,7 @@ class BPRMFConfig(Config):
                  epochs=1000,
                  early_stop=200,
                  **kwargs):
-        super(BPRMFConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.n_dim: int = n_dim
@@ -83,17 +82,17 @@ class _MF(nn.Module):
 
 
 class BPRMF(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = BPRMFConfig(**cfg_dict)
-        super(BPRMF, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-        self.mf = _MF(self.num_users, self.num_items, config.n_dim).to(self.device)
-        self.optimizer = torch.optim.Adam(self.mf.parameters(), lr=config.lr)
+        self.mf = _MF(self.num_users, self.num_items, self.config.n_dim).to(self.device)
+        self.optimizer = torch.optim.Adam(self.mf.parameters(), lr=self.config.lr)
+
+    @property
+    def config_class(self):
+        return BPRMFConfig
 
     def fit(self):
         data_iter = PairwiseIterator(self.dataset.train_data,

@@ -13,9 +13,9 @@ from typing import Dict
 from collections import defaultdict
 import numpy as np
 from .base import AbstractRecommender
-from ..io import PairwiseIterator, Dataset
+from ..io import PairwiseIterator
 from ..utils.torch import sp_mat_to_sp_tensor
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.py import Config
 
 
@@ -33,7 +33,7 @@ class LightGCLConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(LightGCLConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.lambda1: float = lambda1  # weight of cl loss
         self.d: int = d  # embedding size
@@ -170,12 +170,8 @@ class _LightGCL(nn.Module):
 
 
 class LightGCL(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = LightGCLConfig(**cfg_dict)
-        super(LightGCL, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -213,6 +209,10 @@ class LightGCL(AbstractRecommender):
                                self.config.lambda1, self.config.lambda2,
                                self.config.dropout, self.device).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), weight_decay=0, lr=self.config.lr)
+
+    @property
+    def config_class(self):
+        return LightGCLConfig
 
     def fit(self):
         data_iter = PairwiseIterator(self.dataset.train_data,

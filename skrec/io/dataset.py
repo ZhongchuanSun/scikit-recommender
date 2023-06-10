@@ -78,7 +78,7 @@ def data_cache(func):
 
 class ImplicitFeedback(DataCacheABC):
     def __init__(self, data: pd.DataFrame=None, num_users: int=None, num_items: int=None):
-        super(ImplicitFeedback, self).__init__()
+        super().__init__()
         assert data is None or isinstance(data, pd.DataFrame)
 
         if data is None or data.empty:
@@ -214,7 +214,7 @@ class Dataset(object):
         self.num_users = 0
         self.num_items = 0
         self.num_ratings = 0
-        self._my_md5 = ""
+
         self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + ".bin")
         self._load_data(sep, columns)
         self._load_cached_data()

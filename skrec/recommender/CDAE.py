@@ -16,8 +16,7 @@ import torch.sparse as torch_sp
 from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
-from ..io import Dataset
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.py import BatchIterator
 from ..utils.torch import l2_loss, get_initializer, inner_product
 from ..utils.torch import square_loss, sigmoid_cross_entropy
@@ -38,7 +37,7 @@ class CDAEConfig(Config):
                  epochs=1000,
                  early_stop=200,
                  **kwargs):
-        super(CDAEConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.hidden_dim: int = hidden_dim
@@ -132,12 +131,8 @@ class _CDAE(nn.Module):
 
 
 class CDAE(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = CDAEConfig(**cfg_dict)
-        super(CDAE, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.train_csr_mat = self.dataset.train_data.to_csr_matrix()
@@ -151,9 +146,9 @@ class CDAE(AbstractRecommender):
         else:
             raise ValueError(f"hidden activate function '{self.config.hidden_act}' is invalid.")
 
-        if config.loss_func == "sigmoid_cross_entropy":
+        if self.config.loss_func == "sigmoid_cross_entropy":
             self.loss_func = sigmoid_cross_entropy
-        elif config.loss_func == "square_loss":
+        elif self.config.loss_func == "square_loss":
             self.loss_func = square_loss
         else:
             raise ValueError(f"loss function '{self.config.loss_func}' is invalid.")
@@ -161,6 +156,10 @@ class CDAE(AbstractRecommender):
         self.cdae = _CDAE(self.num_users, self.num_items, self.config.hidden_dim,
                           self.config.dropout, hidden_act).to(self.device)
         self.optimizer = torch.optim.Adam(self.cdae.parameters(), lr=self.config.lr)
+
+    @property
+    def config_class(self):
+        return CDAEConfig
 
     def fit(self):
         train_users = [user for user in range(self.num_users) if self.train_csr_mat[user].nnz]

@@ -15,8 +15,7 @@ import torch.nn as nn
 from torch.nn import Parameter
 from typing import Dict
 from .base import AbstractRecommender
-from ..utils.py import RankingEvaluator, EarlyStopping
-from ..io import Dataset
+from ..utils.py import EarlyStopping
 from ..utils.py import Config
 from ..utils.torch import bpr_loss, get_initializer
 from ..io import SequentialPairwiseIterator
@@ -33,7 +32,7 @@ class HGNConfig(Config):
                  epochs=1000,
                  early_stop=100,
                  **kwargs):
-        super(HGNConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.seq_L: int = seq_L
@@ -165,12 +164,9 @@ class _HGN(nn.Module):
 
 
 class HGN(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = HGNConfig(**cfg_dict)
-        super(HGN, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
+        config = self.config
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.pad_idx = self.num_items
@@ -183,6 +179,10 @@ class HGN(AbstractRecommender):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.hgn = _HGN(self.num_users, self.num_items, config.embed_size, config.seq_L, self.pad_idx).to(self.device)
         self.optimizer = torch.optim.Adam(self.hgn.parameters(), weight_decay=config.reg, lr=config.lr)
+
+    @property
+    def config_class(self):
+        return HGNConfig
 
     def fit(self):
         data_iter = SequentialPairwiseIterator(self.dataset.train_data,

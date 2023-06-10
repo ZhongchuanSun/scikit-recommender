@@ -14,8 +14,7 @@ from tensorflow import keras
 from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import Config
-from ..io import Dataset
-from ..utils.py import RankingEvaluator, EarlyStopping
+from ..utils.py import EarlyStopping
 from ..utils.py import BatchIterator
 from ..utils.tf1x import euclidean_distance, hinge_loss
 from ..io.data_iterator import _generate_positive_items, _sampling_negative_items
@@ -33,7 +32,7 @@ class CMLConfig(Config):
                  epochs=500,
                  early_stop=100,
                  **kwargs):
-        super(CMLConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.reg: float = reg
         self.embed_size: int = embed_size
@@ -58,12 +57,8 @@ class CMLConfig(Config):
 
 
 class CML(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = CMLConfig(**cfg_dict)
-        super(CML, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict()
@@ -73,6 +68,10 @@ class CML(AbstractRecommender):
         tf_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
+
+    @property
+    def config_class(self):
+        return CMLConfig
 
     def _create_variable(self):
         # B: batch size

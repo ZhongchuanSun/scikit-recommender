@@ -12,8 +12,7 @@ import numpy as np
 from typing import Dict
 import tensorflow as tf
 from .base import AbstractRecommender
-from ..utils.py import RankingEvaluator, EarlyStopping
-from ..io import Dataset
+from ..utils.py import EarlyStopping
 from ..utils.tf1x import inner_product
 from ..utils.py import pad_sequences, batch_randint_choice, BatchIterator
 from ..utils.py import Config
@@ -283,7 +282,7 @@ class SASRecConfig(Config):
                  epochs=1000,
                  early_stop=100,
                  **kwargs):
-        super(SASRecConfig, self).__init__()
+        super().__init__()
         self.lr: float = lr
         self.l2_emb: float = l2_emb
         self.hidden_units: int = hidden_units
@@ -310,12 +309,8 @@ class SASRecConfig(Config):
 
 
 class SASRec(AbstractRecommender):
-    def __init__(self, dataset: Dataset, cfg_dict: Dict, evaluator: RankingEvaluator):
-        config = SASRecConfig(**cfg_dict)
-        super(SASRec, self).__init__(dataset, config)
-        self.config = config
-        self.dataset = dataset
-        self.evaluator = evaluator
+    def __init__(self, run_config: Dict, model_config: Dict):
+        super().__init__(run_config, model_config)
 
         self.users_num, self.items_num = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict_by_time()
@@ -327,6 +322,10 @@ class SASRec(AbstractRecommender):
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
         self.test_item_seqs = self._process_test()
+
+    @property
+    def config_class(self):
+        return SASRecConfig
 
     def _process_test(self):
         item_seqs = [self.user_pos_train[user][-self.config.max_len:] if user in self.user_pos_train else [self.items_num]
