@@ -9,7 +9,7 @@ from .vocab import FreqVocab
 import pickle
 import multiprocessing
 import time
-from ...io import Dataset
+from ...io import CFDataset
 
 random_seed = 12345
 short_seq_prob = 0  # Probability of creating sequences which are shorter than the maximum length。
@@ -417,7 +417,7 @@ def gen_samples(data,
     return total_written
 
 
-def main(config, dataset: Dataset, output_dir: str, tf_record_name: str):
+def main(config, dataset: CFDataset, output_dir: str, tf_record_name: str):
     tf.logging.set_verbosity(tf.logging.DEBUG)
 
     max_seq_length = config.max_seq_len

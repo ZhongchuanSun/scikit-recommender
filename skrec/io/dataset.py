@@ -1,7 +1,7 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["ImplicitFeedback", "Dataset"]
+__all__ = ["ImplicitFeedback", "KnowledgeGraph", "CFDataset", "KGDataset"]
 
 
 import os
@@ -26,6 +26,10 @@ _DColumns = {"UI": [_USER, _ITEM],
              "UIT": [_USER, _ITEM, _TIME],
              "UIRT": [_USER, _ITEM, _RATING, _TIME]
              }
+
+_HEAD = "head"
+_TAIL = "tail"
+_RELATION = "relation"
 
 
 class DataCacheABC(object):
@@ -177,9 +181,69 @@ class ImplicitFeedback(DataCacheABC):
         return len(self._data)
 
 
-class Dataset(object):
+class KnowledgeGraph(DataCacheABC):
+    def __init__(self, data: pd.DataFrame=None, num_entities: int=None, num_relations: int=None):
+        super().__init__()
+        assert data is None or isinstance(data, pd.DataFrame)
+
+        if data is None or data.empty:
+            self._data = pd.DataFrame()
+            self.num_entities = 0
+            self.num_relations = 0
+            self.num_triplets = 0
+        else:
+            self._data = data
+            self.num_entities = num_entities if num_entities is not None else max(max(data[_HEAD]), max(data[_TAIL])) + 1
+            self.num_relations = num_relations if num_relations is not None else max(data[_RELATION]) + 1
+            self.num_triplets = len(data)
+
+    def is_empty(self) -> bool:
+        return self._data is None or self._data.empty
+
+    @data_cache
+    def to_triplets(self) -> np.ndarray:
+        triplets = self._data[[_HEAD, _RELATION, _TAIL]].to_numpy(copy=True, dtype=np.int32)
+        return triplets
+
+    @data_cache
+    def to_head_dict(self) -> Dict[int, Dict[str, np.ndarray]]:
+        head_dict = OrderedDict()
+        head_grouped = self._data.groupby(_HEAD)
+        for head, head_data in head_grouped:
+            head_dict[head] = {_RELATION: head_data[_RELATION].to_numpy(dtype=np.int32),
+                               _TAIL: head_data[_TAIL].to_numpy(dtype=np.int32)}
+        return head_dict
+
+    @data_cache
+    def to_tail_dict(self) -> Dict[int, Dict[str, np.ndarray]]:
+        tail_dict = OrderedDict()
+        tail_grouped = self._data.groupby(_TAIL)
+        for tail, tail_data in tail_grouped:
+            tail_dict[tail] = {_RELATION: tail_data[_RELATION].to_numpy(dtype=np.int32),
+                               _HEAD: tail_data[_HEAD].to_numpy(dtype=np.int32)}
+        return tail_dict
+
+    @data_cache
+    def to_csr_matrix_list(self) -> Dict[int, sp.csr_matrix]:
+        raise NotImplementedError
+
+
+class SocialNetwork(DataCacheABC):
+    # TODO
+    pass
+
+
+class PostInitMeta(type):
+    def __call__(cls, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        if hasattr(obj, '__post_init__'):
+            obj.__post_init__()
+        return obj
+
+
+class CFDataset(metaclass=PostInitMeta):
     def __init__(self, data_dir, sep, columns):
-        """Dataset
+        """CFDataset
 
         Notes:
             The prefix name of data files is same as the data_dir, and the
@@ -200,25 +264,12 @@ class Dataset(object):
         """
 
         self._data_dir = data_dir
-
-        # metadata
-        self.train_data = ImplicitFeedback()
-        self.valid_data = ImplicitFeedback()
-        self.test_data = ImplicitFeedback()
-        self.user2id = None
-        self.item2id = None
-        self.id2user = None
-        self.id2item = None
-
-        # statistic
-        self.num_users = 0
-        self.num_items = 0
-        self.num_ratings = 0
-
         self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + ".bin")
-        self._load_data(sep, columns)
-        self._load_cached_data()
-        atexit.register(self._dump_cached_data)
+        self._load_cf_data(sep, columns)
+
+    def __post_init__(self):
+        self._restore_cached_data()
+        atexit.register(self._save_cached_data)
 
     @property
     def data_name(self):
@@ -253,7 +304,8 @@ class Dataset(object):
             warnings.warn(f"'{map_file}' does not exist.")
         return maps, reverses
 
-    def _load_data(self, sep, columns):
+    def _load_cf_data(self, sep, columns):
+        # Load collaborative filtering model data
         if columns not in _DColumns:
             key_str = ", ".join(_DColumns.keys())
             raise ValueError("'columns' must be one of '%s'." % key_str)
@@ -268,12 +320,14 @@ class Dataset(object):
                                      header=None, handle=warnings.warn)
         _test_data = self._read_csv(self._file_prefix + ".test", sep=sep, names=columns,
                                     header=None, handle=raise_error)
+
         if _train_data.isnull().values.any():
             warnings.warn(f"'Training data has None value, please check the file or the separator.")
         if _valid_data.isnull().values.any():
             warnings.warn(f"'Validation data has None value, please check the file or the separator.")
         if _test_data.isnull().values.any():
             warnings.warn(f"'Test data has None value, please check the file or the separator.")
+
         self.user2id, self.id2user = self._read_map_file(self._file_prefix + ".user2id", sep)
         self.item2id, self.id2item = self._read_map_file(self._file_prefix + ".item2id", sep)
 
@@ -288,46 +342,6 @@ class Dataset(object):
         self.train_data = ImplicitFeedback(_train_data, num_users=self.num_users, num_items=self.num_items)
         self.valid_data = ImplicitFeedback(_valid_data, num_users=self.num_users, num_items=self.num_items)
         self.test_data = ImplicitFeedback(_test_data, num_users=self.num_users, num_items=self.num_items)
-
-    def _is_data_updated(self):
-        if not os.path.exists(self._cache_file):
-            return True
-        cached_time = os.path.getmtime(self._cache_file)
-
-        for file_suffix in [".train", ".test", ".valid"]:
-            filename = self._file_prefix + file_suffix
-            if os.path.exists(filename) and \
-                    os.path.getmtime(filename) > cached_time:
-                return True
-        return False
-
-    def _load_cached_data(self):
-        if self._is_data_updated():
-            return
-        # load cached data
-        try:
-            with open(self._cache_file, 'rb') as fin:
-                _t_data = pickle.load(fin)
-
-            self.train_data.loads_cached_data(_t_data["train_data"])
-            self.test_data.loads_cached_data(_t_data["test_data"])
-            self.valid_data.loads_cached_data(_t_data["valid_data"])
-        except Exception as e:
-            warnings.warn(f"load_cached_data error: {e}")
-
-    def _dump_cached_data(self):
-        if self.train_data.is_cache_modified() or \
-                self.valid_data.is_cache_modified() or \
-                self.test_data.is_cache_modified():
-            _t_data = dict()
-            _t_data["train_data"] = self.train_data.dumps_cached_data()
-            _t_data["test_data"] = self.test_data.dumps_cached_data()
-            _t_data["valid_data"] = self.valid_data.dumps_cached_data()
-            try:
-                with open(self._cache_file, 'wb') as fout:
-                    pickle.dump(_t_data, fout)
-            except Exception as e:
-                warnings.warn(f"_dump_cached_data error: {e}")
 
     @property
     def statistic_info(self):
@@ -356,5 +370,140 @@ class Dataset(object):
                          f"The number of validation: {len(self.valid_data)}",
                          f"The number of testing: {len(self.test_data)}"
                          ]
+
             statistic = "\n".join(statistic)
             return statistic
+
+    def _read_from_cache_file(self):
+        cache_data = dict()
+        try:
+            with open(self._cache_file, 'rb') as fin:
+                cache_data = pickle.load(fin)
+        except Exception as e:
+            warnings.warn(f"_read_cache_file error: {e}")
+        return cache_data
+
+    def _write_to_cache_file(self, cache_data):
+        try:
+            with open(self._cache_file, 'wb') as fout:
+                pickle.dump(cache_data, fout)
+        except Exception as e:
+            warnings.warn(f"_write_to_cache_file error: {e}")
+
+    def _update_cache_file(self, new_caches):
+        cache_data = dict()
+        if os.path.exists(self._cache_file):
+            cache_data = self._read_from_cache_file()
+
+        cache_data.update(new_caches)
+        self._write_to_cache_file(cache_data)
+
+    def _save_cached_data(self):
+        if not self._is_cache_modified():
+            return
+
+        _t_data = self._dumps_cached_data()
+        # save cached data
+        self._update_cache_file(_t_data)
+
+    def _restore_cached_data(self):
+        if self._is_data_updated():
+            return
+        # restore cached data
+        _t_data = self._read_from_cache_file()
+        try:
+            self._loads_cached_data(_t_data)
+        except Exception as e:
+            warnings.warn(f"_restore_cached_data error: {e}")
+
+    def _is_cache_modified(self) -> bool:
+        return self.train_data.is_cache_modified() or \
+               self.valid_data.is_cache_modified() or \
+               self.test_data.is_cache_modified()
+
+    def _is_data_updated(self) -> bool:
+        if not os.path.exists(self._cache_file):
+            return True
+        cached_time = os.path.getmtime(self._cache_file)
+
+        for file_suffix in [".train", ".test", ".valid"]:
+            filename = self._file_prefix + file_suffix
+            if os.path.exists(filename) and os.path.getmtime(filename) > cached_time:
+                return True
+        return False
+
+    def _dumps_cached_data(self):
+        _t_data = dict()
+        _t_data["train_data"] = self.train_data.dumps_cached_data()
+        _t_data["test_data"] = self.test_data.dumps_cached_data()
+        _t_data["valid_data"] = self.valid_data.dumps_cached_data()
+        return _t_data
+
+    def _loads_cached_data(self, _t_data):
+        # load cached data
+        try:
+            self.train_data.loads_cached_data(_t_data["train_data"])
+            self.test_data.loads_cached_data(_t_data["test_data"])
+            self.valid_data.loads_cached_data(_t_data["valid_data"])
+        except Exception as e:
+            warnings.warn(f"_loads_cached_data error: {e}")
+
+
+class KGDataset(CFDataset):
+    def __init__(self, data_dir, sep, columns):
+        super().__init__(data_dir, sep, columns)
+        self._load_kg_data(sep)
+
+    def _load_kg_data(self, sep):
+        # Load knowledge graph data
+        def raise_error(err: str): raise FileNotFoundError(err)
+        _kg_data = self._read_csv(self._file_prefix + ".kg", sep=sep, names=[_HEAD, _RELATION, _TAIL],
+                                  header=raise_error)
+        if _kg_data.isnull().values.any():
+            warnings.warn(f"'Knowledge graph data has None value, please check the file or the separator.")
+        _kg_data = _kg_data.drop_duplicates()
+
+        self.kg_data = KnowledgeGraph(_kg_data)
+        self.num_entities = self.kg_data.num_entities
+        self.num_relations = self.kg_data.num_relations
+        self.num_triplets = self.kg_data.num_triplets
+
+    @property
+    def statistic_info(self):
+        cf_info = super().statistic_info
+        statistic = ["",
+                     f"The number of entities: {self.num_entities}",
+                     f"The number of relations: {self.num_relations}",
+                     f"The number of triplets: {self.num_triplets}"
+                     ]
+        kg_info = "\n".join(statistic)
+
+        return cf_info + kg_info
+
+    def _is_cache_modified(self) -> bool:
+        return super()._is_cache_modified() or self.kg_data.is_cache_modified()
+
+    def _is_data_updated(self) -> bool:
+        if super()._is_data_updated():
+            return True
+        cached_time = os.path.getmtime(self._cache_file)
+        kg_time = os.path.getmtime(self._file_prefix + ".kg")
+        return kg_time > cached_time
+
+    def _dumps_cached_data(self):
+        _t_data = super()._dumps_cached_data()
+        _t_data["kg_data"] = self.kg_data.dumps_cached_data()
+        return _t_data
+
+    def _loads_cached_data(self, _t_data):
+        # load cached data
+        super()._loads_cached_data(_t_data)
+        try:
+            self.kg_data.loads_cached_data(_t_data["kg_data"])
+        except Exception as e:
+            warnings.warn(f"_loads_cached_data error: {e}")
+
+
+class SocialDataset(CFDataset):
+    # TODO
+    pass

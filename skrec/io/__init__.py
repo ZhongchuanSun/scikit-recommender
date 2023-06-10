@@ -1,8 +1,10 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-from .dataset import Dataset
+from .dataset import CFDataset
 from .dataset import ImplicitFeedback
+from .dataset import KnowledgeGraph
+from .dataset import KGDataset
 
 from .data_iterator import PointwiseIterator
 from .data_iterator import PairwiseIterator
