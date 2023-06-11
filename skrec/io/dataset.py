@@ -7,7 +7,7 @@ __all__ = ["ImplicitFeedback", "KnowledgeGraph", "CFDataset", "KGDataset"]
 import os
 import pickle
 import warnings
-from typing import Dict, Callable
+from typing import Dict, Callable, List
 from copy import deepcopy
 import functools
 from collections import OrderedDict
@@ -16,6 +16,7 @@ import pandas as pd
 import scipy.sparse as sp
 import atexit
 from ..utils.py import pad_sequences
+from ..utils.common import PostInitMeta
 
 _USER = "user"
 _ITEM = "item"
@@ -224,21 +225,26 @@ class KnowledgeGraph(DataCacheABC):
         return tail_dict
 
     @data_cache
-    def to_csr_matrix_list(self) -> Dict[int, sp.csr_matrix]:
+    def to_relation_dict(self) -> Dict[int, Dict[str, np.ndarray]]:
+        rel_dict = OrderedDict()
+        rel_grouped = self._data.groupby(_RELATION)
+        for rel, rel_data in rel_grouped:
+            rel_dict[rel] = {_HEAD: rel_data[_HEAD].to_numpy(dtype=np.int32),
+                             _TAIL: rel_data[_TAIL].to_numpy(dtype=np.int32)}
+        return rel_dict
+
+    @data_cache
+    def to_csr_matrix_dict(self) -> Dict[int, sp.csr_matrix]:
+        raise NotImplementedError
+
+    @data_cache
+    def to_coo_matrix_dict(self) -> Dict[int, sp.coo_matrix]:
         raise NotImplementedError
 
 
 class SocialNetwork(DataCacheABC):
     # TODO
     pass
-
-
-class PostInitMeta(type):
-    def __call__(cls, *args, **kwargs):
-        obj = super().__call__(*args, **kwargs)
-        if hasattr(obj, '__post_init__'):
-            obj.__post_init__()
-        return obj
 
 
 class CFDataset(metaclass=PostInitMeta):
@@ -458,7 +464,7 @@ class KGDataset(CFDataset):
         # Load knowledge graph data
         def raise_error(err: str): raise FileNotFoundError(err)
         _kg_data = self._read_csv(self._file_prefix + ".kg", sep=sep, names=[_HEAD, _RELATION, _TAIL],
-                                  header=raise_error)
+                                  header=None, handle=raise_error)
         if _kg_data.isnull().values.any():
             warnings.warn(f"'Knowledge graph data has None value, please check the file or the separator.")
         _kg_data = _kg_data.drop_duplicates()

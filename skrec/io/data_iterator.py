@@ -3,7 +3,8 @@ __email__ = "zhongchuansun@gmail.com"
 
 __all__ = ["PointwiseIterator", "PairwiseIterator",
            "SequentialPointwiseIterator", "SequentialPairwiseIterator",
-           "UserVecIterator", "ItemVecIterator"
+           "UserVecIterator", "ItemVecIterator",
+           "KGPairwiseIterator"
            ]
 
 from typing import Dict
@@ -14,7 +15,8 @@ from ..utils.py import OrderedDefaultDict
 from ..utils.py import BatchIterator
 from ..utils.py import randint_choice
 from ..utils.py import pad_sequences
-from .dataset import ImplicitFeedback
+from .dataset import ImplicitFeedback, KnowledgeGraph
+from .dataset import _HEAD, _RELATION, _TAIL
 
 
 class _Iterator(object):
@@ -345,3 +347,77 @@ class ItemVecIterator(_Iterator):
     def __iter__(self):
         for bat_items in self.item_iter:
             yield self.item_csr_matrix[bat_items].toarray()
+
+
+def _generate_positive_triples(head_pos_dict: Dict[int, Dict[str, np.ndarray]]):
+    # positive: (h1,r1,t1),  negative (h1,r1,t2)
+    assert head_pos_dict, "'head_pos_dict' cannot be empty."
+
+    list_heads, list_relations, list_tails = [], [], []
+    head_n_pos = OrderedDict()
+
+    for head, rel_tail_dict in head_pos_dict.items():
+        relations = rel_tail_dict[_RELATION]
+        tails = rel_tail_dict[_TAIL]
+        list_tails.append(tails)
+        list_relations.append(relations)
+        list_heads.append(np.full_like(tails, head))
+        head_n_pos[head] = len(tails)
+    heads_ary = np.concatenate(list_heads, axis=0)
+    relations_ary = np.concatenate(list_relations, axis=0)
+    tails_ary = np.concatenate(list_tails, axis=0)
+    return head_n_pos, heads_ary, relations_ary, tails_ary
+
+
+def _sampling_negative_tails(head_n_pos: OrderedDict, num_neg: int, num_entities: int,
+                             head_pos_dict: Dict[int, Dict[str, np.ndarray]]):
+    # positive: (h1,r1,t1),  negative (h1,r1,t2)
+    assert num_neg > 0, "'num_neg' must be a positive integer."
+
+    neg_tails_list = []
+    for head, n_pos in head_n_pos.items():
+        neg_tails = randint_choice(num_entities, size=n_pos*num_neg, exclusion=head_pos_dict[head][_TAIL])
+        if num_neg == 1:
+            neg_tails = neg_tails if isinstance(neg_tails, Iterable) else np.int32([neg_tails])
+        else:
+            neg_tails = np.reshape(neg_tails, newshape=[n_pos, num_neg])
+        neg_tails_list.append(neg_tails)
+
+    return np.concatenate(neg_tails_list)
+
+
+class KGPairwiseIterator(_Iterator):
+    def __init__(self, dataset: KnowledgeGraph, num_neg: int = 1, batch_size: int = 1024,
+                 shuffle: bool = True, drop_last: bool = False):
+        super(KGPairwiseIterator, self).__init__()
+        # positive: (h1,r1,t1),  negative (h1,r1,t2)
+        if num_neg <= 0:
+            raise ValueError("'num_neg' must be a positive integer.")
+
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.num_neg = num_neg
+        self.num_entities = dataset.num_entities
+        self.drop_last = drop_last
+        self.head_pos_dict = dataset.to_head_dict()
+
+        self.head_n_pos, self.all_heads, self.relations, self.pos_tails = \
+            _generate_positive_triples(self.head_pos_dict)
+
+    def __len__(self):
+        n_sample = len(self.all_heads)
+        if self.drop_last:
+            return n_sample // self.batch_size
+        else:
+            return (n_sample + self.batch_size - 1) // self.batch_size
+
+    def __iter__(self):
+        neg_tails = _sampling_negative_tails(self.head_n_pos, self.num_neg,
+                                             self.num_entities, self.head_pos_dict)
+
+        data_iter = BatchIterator(self.all_heads, self.relations, self.pos_tails, neg_tails,
+                                  batch_size=self.batch_size,
+                                  shuffle=self.shuffle, drop_last=self.drop_last)
+        for bat_heads, bat_relations, bat_pos_tails, bat_neg_tails in data_iter:
+            yield np.asarray(bat_heads), np.asarray(bat_relations), \
+                  np.asarray(bat_pos_tails), np.asarray(bat_neg_tails)

@@ -19,7 +19,7 @@ class AbstractRecommender(object):
     def __init__(self, run_config: Dict, model_config: Dict):
         run_config = RunConfig(**run_config)
         self.config = self.config_class(**model_config)
-        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.dataset = self.data_class(run_config.data_dir, run_config.sep, run_config.file_column)
         self.evaluator = RankingEvaluator(self.dataset.train_data.to_user_dict(),
                                           self.dataset.test_data.to_user_dict(),
                                           metric=run_config.metric, top_k=run_config.top_k,
@@ -30,6 +30,10 @@ class AbstractRecommender(object):
     @property
     def config_class(self) -> Callable:
         raise NotImplementedError
+
+    @property
+    def data_class(self) -> Callable:
+        return CFDataset
 
     def _create_logger(self, dataset: CFDataset, config: Config) -> Logger:
         timestamp = time.time()

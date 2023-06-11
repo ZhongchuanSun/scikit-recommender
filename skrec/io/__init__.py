@@ -12,6 +12,7 @@ from .data_iterator import SequentialPointwiseIterator
 from .data_iterator import SequentialPairwiseIterator
 from .data_iterator import UserVecIterator
 from .data_iterator import ItemVecIterator
+from .data_iterator import KGPairwiseIterator
 
 from .logger import Logger
 

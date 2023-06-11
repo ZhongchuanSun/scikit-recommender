@@ -4,7 +4,7 @@ import scipy.sparse as sp
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["normalize_adj_matrix"]
+__all__ = ["normalize_adj_matrix", "PostInitMeta"]
 
 
 def normalize_adj_matrix(sp_mat, norm_method="left"):
@@ -37,3 +37,11 @@ def normalize_adj_matrix(sp_mat, norm_method="left"):
         raise ValueError(f"'{norm_method}' is an invalid normalization method.")
 
     return norm_sp_mat
+
+
+class PostInitMeta(type):
+    def __call__(cls, *args, **kwargs):
+        obj = super().__call__(*args, **kwargs)
+        if hasattr(obj, '__post_init__'):
+            obj.__post_init__()
+        return obj
