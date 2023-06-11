@@ -20,6 +20,8 @@ from ..utils.py import EarlyStopping
 from ..utils.torch import bpr_loss, l2_loss, l2_distance
 from ..utils.torch import get_initializer
 from ..io import SequentialPairwiseIterator
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class TransRecConfig(Config):
@@ -94,8 +96,10 @@ class _TransRec(nn.Module):
 
 
 class TransRec(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = TransRecConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.user_pos_dict = self.dataset.train_data.to_user_dict_by_time()
@@ -103,10 +107,6 @@ class TransRec(AbstractRecommender):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.transrec = _TransRec(self.num_users, self.num_items, self.config.embed_size).to(self.device)
         self.optimizer = torch.optim.Adam(self.transrec.parameters(), lr=self.config.lr)
-
-    @property
-    def config_class(self):
-        return TransRecConfig
 
     def fit(self):
         data_iter = SequentialPairwiseIterator(self.dataset.train_data,

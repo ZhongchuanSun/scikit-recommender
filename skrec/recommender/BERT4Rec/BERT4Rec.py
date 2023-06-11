@@ -18,7 +18,8 @@ from skrec.recommender.base import AbstractRecommender
 from . import modeling
 import tensorflow as tf
 from .bert4rec_utils import model_fn_builder, input_fn_builder, EvalHooks
-
+from ...io.dataset import CFDataset
+from ...run_config import RunConfig
 
 class BERT4RecConfig(Config):
     def __init__(self,
@@ -72,14 +73,12 @@ class BERT4RecConfig(Config):
 
 
 class BERT4Rec(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = BERT4RecConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
         self._prepare_data()
         self._build_model()
-
-    @property
-    def config_class(self):
-        return BERT4RecConfig
 
     def _prepare_data(self):
         self.logger.info("prepare data...")

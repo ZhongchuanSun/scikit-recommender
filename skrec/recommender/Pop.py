@@ -8,6 +8,8 @@ import pandas as pd
 from typing import Dict
 from ..utils.py import Config
 from .base import AbstractRecommender
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class PopConfig(Config):
@@ -16,14 +18,12 @@ class PopConfig(Config):
 
 
 class Pop(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = PopConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
         self.users_num, self.items_num = self.dataset.num_users, self.dataset.num_items
         self.ranking_score = np.zeros([self.items_num], dtype=np.float32)
-
-    @property
-    def config_class(self):
-        return PopConfig
 
     def fit(self):
         self.logger.info("metrics:".ljust(12) + f"\t{self.evaluator.metrics_str}")

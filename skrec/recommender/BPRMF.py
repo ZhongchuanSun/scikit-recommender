@@ -13,6 +13,8 @@ import torch.nn as nn
 import numpy as np
 from typing import Dict
 from .base import AbstractRecommender
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 from ..utils.py import Config
 from ..utils.py import EarlyStopping
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
@@ -82,17 +84,15 @@ class _MF(nn.Module):
 
 
 class BPRMF(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = BPRMFConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
         self.mf = _MF(self.num_users, self.num_items, self.config.n_dim).to(self.device)
         self.optimizer = torch.optim.Adam(self.mf.parameters(), lr=self.config.lr)
-
-    @property
-    def config_class(self):
-        return BPRMFConfig
 
     def fit(self):
         data_iter = PairwiseIterator(self.dataset.train_data,

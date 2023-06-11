@@ -17,6 +17,8 @@ from .base import AbstractRecommender
 from ..utils.py import EarlyStopping
 from ..utils.py import Config
 from ..utils.tf1x import bpr_loss, l2_loss
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class GRU4RecConfig(Config):
@@ -56,9 +58,11 @@ class GRU4RecConfig(Config):
 
 
 class GRU4Rec(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
-        config: GRU4RecConfig = self.config
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = GRU4RecConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
+        config = self.config
 
         if config.hidden_act == "relu":
             self.hidden_act = tf.nn.relu
@@ -94,10 +98,6 @@ class GRU4Rec(AbstractRecommender):
         tf_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
-
-    @property
-    def config_class(self):
-        return GRU4RecConfig
 
     def _init_data(self):
         data_ui = self.dataset.train_data.to_user_item_pairs_by_time()

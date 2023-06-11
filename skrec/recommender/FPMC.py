@@ -19,6 +19,8 @@ from ..utils.py import EarlyStopping
 from ..utils.torch import get_initializer
 from ..utils.torch import bpr_loss, l2_loss, inner_product
 from ..io import SequentialPairwiseIterator
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class FPMCConfig(Config):
@@ -88,8 +90,10 @@ class _FPMC(nn.Module):
 
 
 class FPMC(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = FPMCConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.user_pos_dict = self.dataset.train_data.to_user_dict_by_time()
@@ -97,10 +101,6 @@ class FPMC(AbstractRecommender):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.fpmc = _FPMC(self.num_users, self.num_items, self.config.embed_size).to(self.device)
         self.optimizer = torch.optim.Adam(self.fpmc.parameters(), lr=self.config.lr)
-
-    @property
-    def config_class(self):
-        return FPMCConfig
 
     def fit(self):
         data_iter = SequentialPairwiseIterator(self.dataset.train_data,

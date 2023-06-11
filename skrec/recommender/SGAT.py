@@ -22,6 +22,8 @@ from ..utils.py import pad_sequences
 from ..utils.tf1x import bpr_loss, l2_loss, l2_distance
 from ..io import SequentialPairwiseIterator
 from ..utils.common import normalize_adj_matrix
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class SGATConfig(Config):
@@ -73,8 +75,10 @@ def mexp(x, tau=1.0):
 
 
 class SGAT(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = SGATConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
 
         self.users_num, self.items_num = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict_by_time()
@@ -85,10 +89,6 @@ class SGAT(AbstractRecommender):
         tf_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
-
-    @property
-    def config_class(self):
-        return SGATConfig
 
     def _process_test(self):
         item_seqs = [self.user_pos_train[user][-self.config.n_seqs:] if user in self.user_pos_train else [self.items_num]

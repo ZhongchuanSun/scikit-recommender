@@ -16,6 +16,8 @@ from ..utils.py import EarlyStopping
 from ..utils.tf1x import inner_product
 from ..utils.py import pad_sequences, batch_randint_choice, BatchIterator
 from ..utils.py import Config
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 def normalize(inputs,
@@ -309,8 +311,10 @@ class SASRecConfig(Config):
 
 
 class SASRec(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = SASRecConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
 
         self.users_num, self.items_num = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict_by_time()
@@ -322,10 +326,6 @@ class SASRec(AbstractRecommender):
         self.sess = tf.Session(config=tf_config)
         self.sess.run(tf.global_variables_initializer())
         self.test_item_seqs = self._process_test()
-
-    @property
-    def config_class(self):
-        return SASRecConfig
 
     def _process_test(self):
         item_seqs = [self.user_pos_train[user][-self.config.max_len:] if user in self.user_pos_train else [self.items_num]

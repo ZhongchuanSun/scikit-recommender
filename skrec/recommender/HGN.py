@@ -19,6 +19,8 @@ from ..utils.py import EarlyStopping
 from ..utils.py import Config
 from ..utils.torch import bpr_loss, get_initializer
 from ..io import SequentialPairwiseIterator
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class HGNConfig(Config):
@@ -164,8 +166,10 @@ class _HGN(nn.Module):
 
 
 class HGN(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = HGNConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
         config = self.config
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
@@ -179,10 +183,6 @@ class HGN(AbstractRecommender):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.hgn = _HGN(self.num_users, self.num_items, config.embed_size, config.seq_L, self.pad_idx).to(self.device)
         self.optimizer = torch.optim.Adam(self.hgn.parameters(), weight_decay=config.reg, lr=config.lr)
-
-    @property
-    def config_class(self):
-        return HGNConfig
 
     def fit(self):
         data_iter = SequentialPairwiseIterator(self.dataset.train_data,

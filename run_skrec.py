@@ -33,10 +33,10 @@ def _set_random_seed(seed=2020):
 
 def main():
     # read config
-    run_dict = {"recommender": "BPRMF",
-                "data_dir": "dataset/ml-100k_ratio_by_time_u5_i5",
-                "file_column": "UIRT",
-                "sep": ',',
+    run_dict = {"recommender": "KGAT",
+                "data_dir": "dataset/yelp2018",
+                "file_column": "UIR",
+                "column_sep": ',',
                 "gpu_id": 0,
                 "metric": ("Recall", "NDCG"),
                 "top_k": (10, 20, 30, 40, 50),
@@ -57,13 +57,13 @@ def main():
     if not model_class:
         print(f"Recommender '{model_name}' is not found.")
 
-    model_config = {"lr": 1e-3, "epochs": 20}
-    model_config = merge_config_with_cmd_args(model_config)
+    model_params = {"lr": 1e-3, "epochs": 2}
+    model_params = merge_config_with_cmd_args(model_params)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)
     _set_random_seed(run_config.seed)
 
-    model: AbstractRecommender = model_class(run_dict, model_config)
+    model: AbstractRecommender = model_class(run_config, model_params)
     logging.root.handlers = old_handlers
     model.fit()
 

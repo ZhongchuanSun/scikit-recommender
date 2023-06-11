@@ -17,6 +17,8 @@ from .base import AbstractRecommender
 from ..io import PairwiseIterator
 from ..utils.py import EarlyStopping
 from ..utils.py import Config
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class DENSConfig(Config):
@@ -412,8 +414,10 @@ def build_sparse_graph(data_cf, n_users, n_items):
 
 
 class DENS(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = DENSConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
 
         self.user_gcn_emb, self.item_gcn_emb = None, None
 
@@ -429,10 +433,6 @@ class DENS(AbstractRecommender):
 
         self.model = _DENS(self.num_users, self.num_items, self.config, norm_mat, self.device).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), weight_decay=0, lr=self.config.lr)
-
-    @property
-    def config_class(self):
-        return DENSConfig
 
     def fit(self):
         data_iter = PairwiseIterator(self.dataset.train_data,

@@ -22,6 +22,8 @@ from ..utils.torch import l2_loss, get_initializer, inner_product
 from ..utils.torch import square_loss, sigmoid_cross_entropy
 from ..utils.torch import sp_mat_to_sp_tensor, dropout_sparse
 from ..utils.py import randint_choice
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class CDAEConfig(Config):
@@ -131,8 +133,10 @@ class _CDAE(nn.Module):
 
 
 class CDAE(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = CDAEConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.train_csr_mat = self.dataset.train_data.to_csr_matrix()
@@ -156,10 +160,6 @@ class CDAE(AbstractRecommender):
         self.cdae = _CDAE(self.num_users, self.num_items, self.config.hidden_dim,
                           self.config.dropout, hidden_act).to(self.device)
         self.optimizer = torch.optim.Adam(self.cdae.parameters(), lr=self.config.lr)
-
-    @property
-    def config_class(self):
-        return CDAEConfig
 
     def fit(self):
         train_users = [user for user in range(self.num_users) if self.train_csr_mat[user].nnz]

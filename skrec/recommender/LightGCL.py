@@ -17,6 +17,8 @@ from ..io import PairwiseIterator
 from ..utils.torch import sp_mat_to_sp_tensor
 from ..utils.py import EarlyStopping
 from ..utils.py import Config
+from ..io.dataset import CFDataset
+from ..run_config import RunConfig
 
 
 class LightGCLConfig(Config):
@@ -170,8 +172,10 @@ class _LightGCL(nn.Module):
 
 
 class LightGCL(AbstractRecommender):
-    def __init__(self, run_config: Dict, model_config: Dict):
-        super().__init__(run_config, model_config)
+    def __init__(self, run_config: RunConfig, model_config: Dict):
+        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self.config = LightGCLConfig(**model_config)
+        super().__init__(run_config, self.config, self.dataset)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -209,10 +213,6 @@ class LightGCL(AbstractRecommender):
                                self.config.lambda1, self.config.lambda2,
                                self.config.dropout, self.device).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), weight_decay=0, lr=self.config.lr)
-
-    @property
-    def config_class(self):
-        return LightGCLConfig
 
     def fit(self):
         data_iter = PairwiseIterator(self.dataset.train_data,
