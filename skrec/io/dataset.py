@@ -235,11 +235,24 @@ class KnowledgeGraph(DataCacheABC):
 
     @data_cache
     def to_csr_matrix_dict(self) -> Dict[int, sp.csr_matrix]:
-        raise NotImplementedError
+        rel_csr_dict = OrderedDict()
+        rel_dict = self.to_relation_dict()
+        for rel, data in rel_dict.items():
+            heads, tails = data[_HEAD], data[_TAIL]
+            pass
+            # users, items = self._data[_USER].to_numpy(), self._data[_ITEM].to_numpy()
+            ones = np.ones(len(heads), dtype=np.float32)
+            csr_mat = sp.csr_matrix((ones, (heads, tails)), shape=(self.num_entities, self.num_entities), copy=True)
+            rel_csr_dict[rel] = csr_mat
+        return rel_csr_dict
 
     @data_cache
     def to_coo_matrix_dict(self) -> Dict[int, sp.coo_matrix]:
-        raise NotImplementedError
+        rel_coo_dict = OrderedDict()
+        rel_csr_dict = self.to_csr_matrix_dict()
+        for rel, data in rel_csr_dict.items():
+            rel_coo_dict[rel] = data.tocsc()
+        return rel_coo_dict
 
 
 class SocialNetwork(DataCacheABC):
