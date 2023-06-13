@@ -12,8 +12,9 @@ class ModelRegistry:
     def register_model(self, model_name, model_class):
         self.models[model_name] = model_class
 
-    def load_skrec_model(self, model_name: str) -> bool:
-        spec_path = f"skrec.recommender.{model_name}"
+    def load_skrec_model(self, model_name: str, spec_path="skrec.recommender") -> bool:
+        spec_path = f"{spec_path}.{model_name}"
+
         if find_spec(spec_path):
             module = import_module(spec_path)
         else:

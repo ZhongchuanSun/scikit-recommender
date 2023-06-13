@@ -51,7 +51,7 @@ def main():
 
     registry = ModelRegistry()
     registry.load_skrec_model(model_name)
-    # registry.register_model(model_name, model_class)
+    registry.load_skrec_model(model_name, "unarchived_models")
 
     model_class = registry.get_model(model_name)
     if not model_class:
