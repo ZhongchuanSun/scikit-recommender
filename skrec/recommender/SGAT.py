@@ -328,9 +328,9 @@ class SGAT(AbstractRecommender):
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
-    def evaluate(self):
+    def evaluate(self, test_users=None):
         self.sess.run(self.assign_opt)
-        return self.evaluator.evaluate(self)
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         last_items = [self.test_item_seqs[u] for u in users]

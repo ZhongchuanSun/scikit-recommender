@@ -6,9 +6,9 @@ __all__ = ["AbstractRecommender"]
 
 import os
 import time
-from typing import Union, List, Dict, Callable
+from typing import Union, List, Tuple
 import numpy as np
-from ..io import Logger, CFDataset
+from ..io import Logger, CFDataset, group_users_by_interactions
 from ..utils.py import Config, slugify
 from ..utils.py import MetricReport
 from ..run_config import RunConfig
@@ -23,6 +23,7 @@ class AbstractRecommender(object):
                                           batch_size=run_config.test_batch_size,
                                           num_thread=run_config.test_thread)
         self.logger: Logger = self._create_logger(dataset, model_config)
+        self._user_groups = group_users_by_interactions(dataset)
 
     def _create_logger(self, dataset: CFDataset, config: Config) -> Logger:
         timestamp = time.time()
@@ -51,8 +52,15 @@ class AbstractRecommender(object):
     def fit(self):
         raise NotImplementedError
 
-    def evaluate(self) -> MetricReport:
+    def evaluate(self, test_users=None) -> MetricReport:
         raise NotImplementedError
+
+    def evaluate_group(self) -> List[Tuple[str, MetricReport]]:
+        group_results = []
+        for user_group in self._user_groups:
+            results = self.evaluate(user_group.users)
+            group_results.append((user_group.label, results))
+        return group_results
 
     def predict(self, users: Union[List[int], np.ndarray]) -> np.ndarray:
         raise NotImplementedError

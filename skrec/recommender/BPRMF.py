@@ -129,10 +129,13 @@ class BPRMF(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        # group_results = self.evaluate_group()
+        # result = "\n".join([f"{label}:".ljust(12) + result.values_str for label, result in group_results])
+        # self.logger.info("\n"+result)
 
-    def evaluate(self):
+    def evaluate(self, test_users=None):
         self.mf.eval()
-        return self.evaluator.evaluate(self)
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users) -> np.ndarray:
         users = torch.from_numpy(np.asarray(users)).long().to(self.device)

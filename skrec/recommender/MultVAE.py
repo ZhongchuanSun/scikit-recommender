@@ -211,9 +211,9 @@ class MultVAE(AbstractRecommender):
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
-    def evaluate(self):
+    def evaluate(self, test_users=None):
         self.multvae.eval()
-        return self.evaluator.evaluate(self)
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         bat_input = self.train_csr_mat[users].toarray()

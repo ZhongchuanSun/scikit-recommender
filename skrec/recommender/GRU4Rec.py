@@ -264,10 +264,10 @@ class GRU4Rec(AbstractRecommender):
 
         return user_embeddings
 
-    def evaluate(self):
+    def evaluate(self, test_users=None):
         self.cur_user_embeddings = self._get_user_embeddings()
         self.cur_item_embeddings, self.cur_item_biases = self.sess.run([self.item_embeddings, self.item_biases])
-        return self.evaluator.evaluate(self)
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         user_embeddings = self.cur_user_embeddings[users]

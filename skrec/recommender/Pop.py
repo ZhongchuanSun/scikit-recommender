@@ -36,8 +36,8 @@ class Pop(AbstractRecommender):
         result = self.evaluate()
         self.logger.info(f"Pop results:".ljust(12) + f"\t{result.values_str}")
 
-    def evaluate(self):
-        return self.evaluator.evaluate(self)
+    def evaluate(self, test_users=None):
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users, neg_items=None):
         ratings = np.tile(self.ranking_score, len(users))

@@ -217,9 +217,9 @@ class Caser(AbstractRecommender):
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
-    def evaluate(self):
+    def evaluate(self, test_users=None):
         self.caser.eval()
-        return self.evaluator.evaluate(self)
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         bat_seq = [self.user_truncated_seq[u] for u in users]

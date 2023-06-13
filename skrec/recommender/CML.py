@@ -177,8 +177,8 @@ class CML(AbstractRecommender):
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
-    def evaluate(self):
-        return self.evaluator.evaluate(self)
+    def evaluate(self, test_users=None):
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         ratings = self.sess.run(self.pre_logits, feed_dict={self.user_h: users})

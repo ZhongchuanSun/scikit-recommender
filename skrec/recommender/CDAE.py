@@ -215,9 +215,9 @@ class CDAE(AbstractRecommender):
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
-    def evaluate(self):
+    def evaluate(self, test_users=None):
         self.cdae.eval()
-        return self.evaluator.evaluate(self)
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         user_ids = torch.from_numpy(np.asarray(users)).long().to(self.device)

@@ -1,16 +1,17 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["ImplicitFeedback", "KnowledgeGraph", "CFDataset", "KGDataset"]
+__all__ = ["ImplicitFeedback", "KnowledgeGraph", "CFDataset", "KGDataset",
+           "UserGroup", "group_users_by_interactions"]
 
 
 import os
 import pickle
 import warnings
-from typing import Dict, Callable, List
+from typing import Dict, Callable, List, Set
 from copy import deepcopy
 import functools
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
@@ -104,6 +105,10 @@ class ImplicitFeedback(DataCacheABC):
     def to_user_item_pairs(self) -> np.ndarray:
         ui_pairs = self._data[[_USER, _ITEM]].to_numpy(copy=True, dtype=np.int32)
         return ui_pairs
+
+    @data_cache
+    def to_set_of_users(self) -> Set[int]:
+        return set(self._data[_USER].unique())
 
     @data_cache
     def to_user_item_pairs_by_time(self) -> np.ndarray:
@@ -526,3 +531,75 @@ class KGDataset(CFDataset):
 class SocialDataset(CFDataset):
     # TODO
     pass
+
+
+class UserGroup(object):
+    def __init__(self, users, num_interactions, activities, label):
+        self.label = label
+        self.num_users = len(users)
+        self.num_interactions = num_interactions
+        self.users = users
+        self.activities = activities
+
+
+def group_users_by_interactions(dataset: CFDataset, num_groups=4) -> List[UserGroup]:
+    user_groups = defaultdict(list)
+    user_pos_train = dataset.train_data.to_user_dict()
+    for user, item_seq in user_pos_train.items():
+        user_groups[len(item_seq)].append(user)
+
+    activities_list, num_users_list = [], []
+    for activity, users in user_groups.items():
+        activities_list.append(activity)
+        num_users_list.append(len(users))
+
+    activities_list = np.array(activities_list)
+    num_users_list = np.array(num_users_list)
+
+    # sort activities
+    sorted_indices = np.argsort(activities_list)
+    activities_list = activities_list[sorted_indices]
+    num_users_list = num_users_list[sorted_indices]
+
+    interactions_list = activities_list*num_users_list
+    group_index = [0]
+    rest_interactions_list = interactions_list
+
+    for g_idx in range(num_groups - 1):
+        num_interactions = np.sum(rest_interactions_list)
+        num_per = num_interactions / (num_groups - g_idx)
+        cum_actions = np.cumsum(rest_interactions_list)
+        _idx = max(np.searchsorted(cum_actions, num_per), 1)
+        split_idx = _idx - 1 if num_per - cum_actions[_idx - 1] < cum_actions[_idx] - num_per else _idx
+        split_idx += 1
+        group_index.append(group_index[-1] + split_idx)
+        rest_interactions_list = rest_interactions_list[split_idx:]
+
+    group_index = group_index[1:]
+    # range labels
+    split_len = activities_list[group_index]
+    labels = [f"< {split_len[0]}"]
+    for mi, ma in zip(split_len[:-1], split_len[1:]):
+        labels.append(f"[{mi}, {ma})")
+    labels.append(f"≥ {split_len[-1]}")
+
+    # the list of numbers of users
+    num_users = [np.sum(n_user) for n_user in np.split(num_users_list, group_index, axis=0)]
+
+    # the list of numbers of interactions
+    num_interactions = [np.sum(n_user) for n_user in np.split(interactions_list, group_index, axis=0)]
+
+    activity_groups = np.split(activities_list, group_index, axis=0)
+
+    # group information
+    test_users = dataset.test_data.to_set_of_users()
+    grouped_users = []
+    for label, n_users, n_interactions, active_group in zip(labels, num_users, num_interactions, activity_groups):
+        users = []
+        for active in active_group:
+            users.extend(user_groups[active])
+
+        users = [u for u in users if u in test_users]
+        user_group = UserGroup(np.array(users), num_interactions, active_group, label)
+        grouped_users.append(user_group)
+    return grouped_users

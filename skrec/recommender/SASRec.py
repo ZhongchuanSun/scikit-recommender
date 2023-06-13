@@ -489,8 +489,8 @@ class SASRec(AbstractRecommender):
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
 
-    def evaluate(self):
-        return self.evaluator.evaluate(self)
+    def evaluate(self, test_users=None):
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         bat_seq = [self.test_item_seqs[u] for u in users]

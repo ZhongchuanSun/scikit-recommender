@@ -263,8 +263,8 @@ class SRGNN(AbstractRecommender):
         all_mask = pad_sequences(all_mask, value=0)
         return A_in, A_out, alias_inputs, items, all_mask
 
-    def evaluate(self):
-        return self.evaluator.evaluate(self)
+    def evaluate(self, test_users=None):
+        return self.evaluator.evaluate(self, test_users)
 
     def predict(self, users):
         bat_user = users
