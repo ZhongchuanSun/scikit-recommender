@@ -592,14 +592,12 @@ def group_users_by_interactions(dataset: CFDataset, num_groups=4) -> List[UserGr
     activity_groups = np.split(activities_list, group_index, axis=0)
 
     # group information
-    test_users = dataset.test_data.to_set_of_users()
     grouped_users = []
     for label, n_users, n_interactions, active_group in zip(labels, num_users, num_interactions, activity_groups):
         users = []
         for active in active_group:
             users.extend(user_groups[active])
 
-        users = [u for u in users if u in test_users]
         user_group = UserGroup(np.array(users), num_interactions, active_group, label)
         grouped_users.append(user_group)
     return grouped_users

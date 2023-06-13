@@ -174,10 +174,12 @@ class RankingEvaluator(object):
         # B: batch size
         # N: the number of items
         assert hasattr(model, "predict"), "the model must have attribute 'predict'."
+        if test_users is not None:
+            test_users = [u for u in test_users if u in self.user_pos_test]
+        else:
+            test_users = list(self.user_pos_test.keys())
 
-        test_users = test_users if test_users is not None else list(self.user_pos_test.keys())
         assert isinstance(test_users, Iterable), "'test_user' must be iterable."
-        test_users = list(test_users)
 
         test_users = BatchIterator(test_users, batch_size=self.batch_size, shuffle=False, drop_last=False)
         bat_results = []
