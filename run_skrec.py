@@ -27,12 +27,6 @@ def _set_random_seed(seed=2020):
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
         print("set pytorch seed")
-
-        print(torch.cuda.is_available())
-        print(torch.cuda.device_count())
-        print(torch.cuda.current_device())
-        for i in range(torch.cuda.device_count()):
-            print(torch.cuda.get_device_name(i))
     except:
         pass
 
