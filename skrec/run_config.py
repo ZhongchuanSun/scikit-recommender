@@ -9,7 +9,7 @@ class RunConfig(Config):
                  recommender="BPRMF",
                  data_dir="dataset/Beauty_loo_u5_i5",
                  file_column="UIRT",
-                 column_sep='\t',
+                 sep='\t',
                  gpu_id=0,
                  metric=("Precision", "Recall", "MAP", "NDCG", "MRR"),
                  top_k=(10, 20, 30, 40, 50, 100),
@@ -21,7 +21,7 @@ class RunConfig(Config):
         self.recommender: str = recommender
         self.data_dir: str = data_dir  # the directory of training and test sets
         self.file_column: str = file_column  # UI, UIR, UIT, UIRT
-        self.sep: str = column_sep
+        self.sep: str = sep
         self.gpu_id = gpu_id
         self.metric: Union[None, str, Tuple[str], List[str]] = metric  # ("Precision", "Recall", "MAP", "NDCG", "MRR")
         self.top_k: Union[int, List[int], Tuple[int]] = top_k

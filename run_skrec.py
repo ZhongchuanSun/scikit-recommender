@@ -36,7 +36,7 @@ def main():
     run_dict = {"recommender": "MCCLK",
                 "data_dir": "dataset/book",
                 "file_column": "UIRT",
-                "column_sep": '\t',
+                "sep": '\t',
                 "gpu_id": 0,
                 "metric": ("Recall", "NDCG"),
                 "top_k": (10, 20, 30, 40, 50),
