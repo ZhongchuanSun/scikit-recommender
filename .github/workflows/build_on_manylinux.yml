@@ -1,4 +1,4 @@
-name: Build on ManyLinux
+name: Build and publish on ManyLinux
 
 on:
   release:
@@ -48,8 +48,10 @@ jobs:
     - name: Auditwheel repair *.whl packages
       run: auditwheel repair dist/*.whl --plat manylinux2014_x86_64
 
-    - name: List the *.whl packages
-      run: ls dist/*.whl
+    - name: List the *.whl packages and *.tar.gz source file
+      run: |
+        ls dist/*.whl
+        ls dist/*.tar.gz
 
     - name: Publish wheels to PyPI
       env:

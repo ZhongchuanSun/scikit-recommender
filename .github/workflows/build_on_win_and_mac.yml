@@ -1,4 +1,4 @@
-name: Build on Windows and MacOS
+name: Build and publish on Windows and MacOS
 
 on:
   release:

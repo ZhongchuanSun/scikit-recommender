@@ -36,6 +36,13 @@ MINOR = 0
 MICRO = 4
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
+with open(os.path.join("skrec", "version.py"), 'w') as fout:
+    skrec_v = f"MAJOR = {MAJOR}\n" \
+              f"MINOR = {MINOR}\n" \
+              f"MICRO = {MICRO}\n" \
+              f"__version__ = \'%d.%d.%d\' % (MAJOR, MINOR, MICRO)\n"
+    fout.write(skrec_v)
+
 
 def get_include_dirs(workspace):
     include_dirs = [np.get_include()]
@@ -123,7 +130,7 @@ def setup_package():
         author="ZhongchuanSun",
         author_email="zhongchuansun@gmail.com",
         description="A science toolkit for recommender systems",
-        long_description=Path("README.md").read_text(),
+        long_description=Path("README.md").read_text() if Path("README.md").exists() else "",
         long_description_content_type="text/markdown",
         url="https://github.com/ZhongchuanSun/scikit-recommender",
         packages=setuptools.find_packages(),

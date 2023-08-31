@@ -27,16 +27,22 @@ def _set_random_seed(seed=2020):
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
         print("set pytorch seed")
+
+        print(torch.cuda.is_available())
+        print(torch.cuda.device_count())
+        print(torch.cuda.current_device())
+        for i in range(torch.cuda.device_count()):
+            print(torch.cuda.get_device_name(i))
     except:
         pass
 
 
 def main():
     # read config
-    run_dict = {"recommender": "KGAT",
-                "data_dir": "dataset/yelp2018",
-                "file_column": "UIR",
-                "column_sep": ',',
+    run_dict = {"recommender": "MCCLK",
+                "data_dir": "dataset/book",
+                "file_column": "UIRT",
+                "column_sep": '\t',
                 "gpu_id": 0,
                 "metric": ("Recall", "NDCG"),
                 "top_k": (10, 20, 30, 40, 50),
@@ -51,7 +57,8 @@ def main():
 
     registry = ModelRegistry()
     registry.load_skrec_model(model_name)
-    registry.load_skrec_model(model_name, "unarchived_models")
+    if os.path.exists("unarchived_models"):
+        registry.load_skrec_model(model_name, "unarchived_models")
 
     model_class = registry.get_model(model_name)
     if not model_class:
@@ -61,6 +68,7 @@ def main():
     model_params = merge_config_with_cmd_args(model_params)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)
+    os.environ['ROCR_VISIBLE_DEVICES'] = str(run_config.gpu_id)
     _set_random_seed(run_config.seed)
 
     model: AbstractRecommender = model_class(run_config, model_params)
