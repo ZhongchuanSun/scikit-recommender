@@ -20,7 +20,6 @@ from ..utils.py import EarlyStopping
 from ..utils.torch import get_initializer
 from ..utils.torch import sigmoid_cross_entropy
 from ..io import SequentialPairwiseIterator
-from ..io.dataset import CFDataset
 from ..run_config import RunConfig
 
 
@@ -166,9 +165,8 @@ class _Caser(nn.Module):
 
 class Caser(AbstractRecommender):
     def __init__(self, run_config: RunConfig, model_config: Dict):
-        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
         self.config = CaserConfig(**model_config)
-        super().__init__(run_config, self.config, self.dataset)
+        super().__init__(run_config, self.config)
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
         self.pad_idx = self.num_items

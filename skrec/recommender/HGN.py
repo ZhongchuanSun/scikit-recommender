@@ -19,7 +19,6 @@ from ..utils.py import EarlyStopping
 from ..utils.py import Config
 from ..utils.torch import bpr_loss, get_initializer
 from ..io import SequentialPairwiseIterator
-from ..io.dataset import CFDataset
 from ..run_config import RunConfig
 
 
@@ -167,9 +166,8 @@ class _HGN(nn.Module):
 
 class HGN(AbstractRecommender):
     def __init__(self, run_config: RunConfig, model_config: Dict):
-        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
         self.config = HGNConfig(**model_config)
-        super().__init__(run_config, self.config, self.dataset)
+        super().__init__(run_config, self.config)
         config = self.config
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items

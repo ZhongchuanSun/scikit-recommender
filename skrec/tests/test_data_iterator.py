@@ -10,7 +10,7 @@ from skrec.io import (
     SequentialPointwiseIterator, SequentialPairwiseIterator,
     UserVecIterator, ItemVecIterator
 )
-from skrec.io import CFDataset
+from skrec.io import RSDataset
 from skrec.io import MovieLens100k, Preprocessor
 
 
@@ -27,7 +27,7 @@ def _load_data():
     processor.split_data_by_ratio(train=0.7, valid=0.0, test=0.3, by_time=True)
     data_dir = processor.save_data()
 
-    return CFDataset(data_dir, '\t', "UIRT")
+    return RSDataset(data_dir, '\t', "UIRT")
 
 
 class TestPointwiseIterator(unittest.TestCase):

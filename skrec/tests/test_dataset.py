@@ -7,7 +7,7 @@ __all__ = []
 import unittest
 import numpy as np
 import scipy.sparse as sp
-from skrec.io import CFDataset
+from skrec.io import RSDataset
 from skrec.io import MovieLens100k, Preprocessor
 
 
@@ -23,7 +23,7 @@ def _load_data():
     # data.split_data_by_leave_out(valid=1, test=1)
     processor.split_data_by_ratio(train=0.7, valid=0.0, test=0.3, by_time=True)
     data_dir = processor.save_data()
-    return CFDataset("./tmp/ml-100k_ratio_u5_i5", '\t', "UIRT")
+    return RSDataset("./tmp/ml-100k_ratio_u5_i5", '\t', "UIRT")
 
 
 class TestDataset(unittest.TestCase):

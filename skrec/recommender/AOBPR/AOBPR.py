@@ -15,9 +15,10 @@ from ...io import PairwiseIterator
 from ...utils.py import randint_choice
 from ...utils.py import Config
 from ...utils.py import EarlyStopping
-from ...io.dataset import CFDataset
 from ...run_config import RunConfig
 from .pyx_aobpr_func import aobpr_update
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class AOBPRConfig(Config):
@@ -49,9 +50,8 @@ class AOBPRConfig(Config):
 
 class AOBPR(AbstractRecommender):
     def __init__(self, run_config: RunConfig, model_config: Dict):
-        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
         self.config = AOBPRConfig(**model_config)
-        super().__init__(run_config, self.config, self.dataset)
+        super().__init__(run_config, self.config)
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
 
         low, high = 0.0, 1.0

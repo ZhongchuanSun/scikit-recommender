@@ -16,7 +16,6 @@ from ..utils.py import EarlyStopping
 from ..utils.tf1x import inner_product
 from ..utils.py import pad_sequences, batch_randint_choice, BatchIterator
 from ..utils.py import Config
-from ..io.dataset import CFDataset
 from ..run_config import RunConfig
 
 
@@ -312,9 +311,8 @@ class SASRecConfig(Config):
 
 class SASRec(AbstractRecommender):
     def __init__(self, run_config: RunConfig, model_config: Dict):
-        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
         self.config = SASRecConfig(**model_config)
-        super().__init__(run_config, self.config, self.dataset)
+        super().__init__(run_config, self.config)
 
         self.users_num, self.items_num = self.dataset.num_users, self.dataset.num_items
         self.user_pos_train = self.dataset.train_data.to_user_dict_by_time()

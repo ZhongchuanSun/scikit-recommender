@@ -17,7 +17,6 @@ from .base import AbstractRecommender
 from ..utils.py import EarlyStopping
 from ..utils.py import Config
 from ..utils.tf1x import bpr_loss, l2_loss
-from ..io.dataset import CFDataset
 from ..run_config import RunConfig
 
 
@@ -59,9 +58,8 @@ class GRU4RecConfig(Config):
 
 class GRU4Rec(AbstractRecommender):
     def __init__(self, run_config: RunConfig, model_config: Dict):
-        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
         self.config = GRU4RecConfig(**model_config)
-        super().__init__(run_config, self.config, self.dataset)
+        super().__init__(run_config, self.config)
         config = self.config
 
         if config.hidden_act == "relu":

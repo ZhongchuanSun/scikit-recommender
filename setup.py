@@ -33,7 +33,7 @@ Topic :: Software Development :: Libraries :: Python Modules
 
 MAJOR = 0
 MINOR = 0
-MICRO = 4
+MICRO = 5
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 with open(os.path.join("skrec", "version.py"), 'w') as fout:

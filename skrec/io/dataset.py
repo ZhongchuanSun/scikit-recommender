@@ -1,7 +1,7 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["ImplicitFeedback", "KnowledgeGraph", "CFDataset", "KGDataset",
+__all__ = ["ImplicitFeedback", "KnowledgeGraph", "RSDataset",
            "UserGroup", "group_users_by_interactions"]
 
 
@@ -32,6 +32,15 @@ _DColumns = {"UI": [_USER, _ITEM],
 _HEAD = "head"
 _TAIL = "tail"
 _RELATION = "relation"
+
+
+def _read_csv(csv_file, sep, header, names, handle: Callable = lambda x: x):
+    if os.path.isfile(csv_file):
+        csv_data = pd.read_csv(csv_file, sep=sep, header=header, names=names)
+    else:
+        handle(f"'{csv_file}' does not exist.")
+        csv_data = pd.DataFrame()
+    return csv_data
 
 
 class DataCacheABC(object):
@@ -265,140 +274,15 @@ class SocialNetwork(DataCacheABC):
     pass
 
 
-class CFDataset(metaclass=PostInitMeta):
-    def __init__(self, data_dir, sep, columns):
-        """CFDataset
-
-        Notes:
-            The prefix name of data files is same as the data_dir, and the
-            suffix/extension names are 'train', 'test', 'user2id', 'item2id'.
-            Directory structure:
-                data_dir
-                    ├── data_dir.train      // training data
-                    ├── data_dir.valid      // validation data, optional
-                    ├── data_dir.test       // test data
-                    ├── data_dir.user2id    // user to id, optional
-                    ├── data_dir.item2id    // item to id, optional
-
-        Args:
-            data_dir: The directory of dataset.
-            sep: The separator/delimiter of file columns.
-            columns: The format of columns, must be one of 'UI',
-                'UIR', 'UIT' and 'UIRT'
-        """
-
-        self._data_dir = data_dir
-        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + ".bin")
-        self._load_cf_data(sep, columns)
+class CacheOpt(metaclass=PostInitMeta):
+    def __init__(self, cache_file=None):
+        self._cache_file: str = cache_file
 
     def __post_init__(self):
-        self._restore_cached_data()
-        atexit.register(self._save_cached_data)
+        self._restore_cached_data()  # restore the cached data after initializing the object
+        atexit.register(self._save_cached_data)  # dump the cached data before destroying the object
 
-    @property
-    def data_name(self):
-        return os.path.split(self.data_dir)[-1]
-
-    @property
-    def data_dir(self):
-        return self._data_dir
-
-    @property
-    def _file_prefix(self):
-        return os.path.join(self.data_dir, self.data_name)
-
-    @staticmethod
-    def _read_csv(csv_file, sep, header, names, handle: Callable=lambda x: x):
-        if os.path.isfile(csv_file):
-            csv_data = pd.read_csv(csv_file, sep=sep, header=header, names=names)
-        else:
-            handle(f"'{csv_file}' does not exist.")
-            csv_data = pd.DataFrame()
-        return csv_data
-
-    @staticmethod
-    def _read_map_file(map_file, sep):
-        if os.path.isfile(map_file):
-            maps = pd.read_csv(map_file, sep=sep, header=None).to_numpy()
-            maps = OrderedDict(maps)
-            reverses = OrderedDict([(second, first) for first, second in maps.items()])
-        else:
-            maps = None
-            reverses = None
-            warnings.warn(f"'{map_file}' does not exist.")
-        return maps, reverses
-
-    def _load_cf_data(self, sep, columns):
-        # Load collaborative filtering model data
-        if columns not in _DColumns:
-            key_str = ", ".join(_DColumns.keys())
-            raise ValueError("'columns' must be one of '%s'." % key_str)
-
-        columns = _DColumns[columns]
-
-        # load data
-        def raise_error(err: str): raise FileNotFoundError(err)
-        _train_data = self._read_csv(self._file_prefix + ".train", sep=sep, names=columns,
-                                     header=None, handle=raise_error)
-        _valid_data = self._read_csv(self._file_prefix + ".valid", sep=sep, names=columns,
-                                     header=None, handle=warnings.warn)
-        _test_data = self._read_csv(self._file_prefix + ".test", sep=sep, names=columns,
-                                    header=None, handle=raise_error)
-
-        if _train_data.isnull().values.any():
-            warnings.warn(f"'Training data has None value, please check the file or the separator.")
-        if _valid_data.isnull().values.any():
-            warnings.warn(f"'Validation data has None value, please check the file or the separator.")
-        if _test_data.isnull().values.any():
-            warnings.warn(f"'Test data has None value, please check the file or the separator.")
-
-        self.user2id, self.id2user = self._read_map_file(self._file_prefix + ".user2id", sep)
-        self.item2id, self.id2item = self._read_map_file(self._file_prefix + ".item2id", sep)
-
-        # statistical information
-        data_info = [(max(data[_USER]), max(data[_ITEM]), len(data))
-                     for data in [_train_data, _valid_data, _test_data] if not data.empty]
-        self.num_users = max([d[0] for d in data_info]) + 1
-        self.num_items = max([d[1] for d in data_info]) + 1
-        self.num_ratings = sum([d[2] for d in data_info])
-
-        # convert to to the object of ImplicitFeedback
-        self.train_data = ImplicitFeedback(_train_data, num_users=self.num_users, num_items=self.num_items)
-        self.valid_data = ImplicitFeedback(_valid_data, num_users=self.num_users, num_items=self.num_items)
-        self.test_data = ImplicitFeedback(_test_data, num_users=self.num_users, num_items=self.num_items)
-
-    @property
-    def statistic_info(self):
-        """The statistic of dataset.
-
-        Returns:
-            str: The summary of statistic information
-        """
-        if 0 in {self.num_users, self.num_items, self.num_ratings}:
-            return ""
-        else:
-            num_users, num_items = self.num_users, self.num_items
-            num_ratings = self.num_ratings
-            sparsity = 1 - 1.0 * num_ratings / (num_users * num_items)
-
-            statistic = ["Dataset statistic information:",
-                         "Name: %s" % self.data_name,
-                         f"The number of users: {num_users}",
-                         f"The number of items: {num_items}",
-                         f"The number of ratings: {num_ratings}",
-                         f"Average actions of users: {(1.0 * num_ratings / num_users):.2f}",
-                         f"Average actions of items: {(1.0 * num_ratings / num_items):.2f}",
-                         f"The sparsity of the dataset: {(sparsity * 100):.6f}%%",
-                         "",
-                         f"The number of training: {len(self.train_data)}",
-                         f"The number of validation: {len(self.valid_data)}",
-                         f"The number of testing: {len(self.test_data)}"
-                         ]
-
-            statistic = "\n".join(statistic)
-            return statistic
-
-    def _read_from_cache_file(self):
+    def _read_from_cache_file(self) -> Dict:
         cache_data = dict()
         try:
             with open(self._cache_file, 'rb') as fin:
@@ -441,6 +325,124 @@ class CFDataset(metaclass=PostInitMeta):
             warnings.warn(f"_restore_cached_data error: {e}")
 
     def _is_cache_modified(self) -> bool:
+        raise NotImplementedError
+
+    def _is_data_updated(self) -> bool:
+        raise NotImplementedError
+
+    def _dumps_cached_data(self) -> Dict:
+        raise NotImplementedError
+
+    def _loads_cached_data(self, _t_data):
+        raise NotImplementedError
+
+
+class CFData(CacheOpt):
+    def __init__(self, data_dir, sep, columns):
+        super().__init__()
+        self._data_dir = data_dir
+        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + "_cf" + ".bin")
+        self._load_cf_data(sep, columns)
+
+    def __post_init__(self):
+        self._restore_cached_data()  # restore the cached data after initializing the object
+        atexit.register(self._save_cached_data)  # dump the cached data before destroying the object
+
+    @property
+    def data_dir(self):
+        return self._data_dir
+
+    @property
+    def data_name(self):
+        return os.path.split(self.data_dir)[-1]
+
+    @property
+    def _file_prefix(self):
+        return os.path.join(self.data_dir, self.data_name)
+
+    @staticmethod
+    def _read_map_file(map_file, sep):
+        if os.path.isfile(map_file):
+            maps = pd.read_csv(map_file, sep=sep, header=None).to_numpy()
+            maps = OrderedDict(maps)
+            reverses = OrderedDict([(second, first) for first, second in maps.items()])
+        else:
+            maps = None
+            reverses = None
+            warnings.warn(f"'{map_file}' does not exist.")
+        return maps, reverses
+
+    def _load_cf_data(self, sep, columns):
+        # Load collaborative filtering model data
+        if columns not in _DColumns:
+            key_str = ", ".join(_DColumns.keys())
+            raise ValueError(f"'columns' must be one of '{key_str}'.")
+
+        columns = _DColumns[columns]
+
+        # load data
+        def raise_error(err: str): raise FileNotFoundError(err)
+        _train_data = _read_csv(self._file_prefix + ".train", sep=sep, names=columns,
+                                header=None, handle=raise_error)
+        _valid_data = _read_csv(self._file_prefix + ".valid", sep=sep, names=columns,
+                                header=None, handle=warnings.warn)
+        _test_data = _read_csv(self._file_prefix + ".test", sep=sep, names=columns,
+                               header=None, handle=raise_error)
+
+        if _train_data.isnull().values.any():
+            warnings.warn(f"'Training data has None value, please check the file or the separator.")
+        if _valid_data.isnull().values.any():
+            warnings.warn(f"'Validation data has None value, please check the file or the separator.")
+        if _test_data.isnull().values.any():
+            warnings.warn(f"'Test data has None value, please check the file or the separator.")
+
+        self.user2id, self.id2user = self._read_map_file(self._file_prefix + ".user2id", sep)
+        self.item2id, self.id2item = self._read_map_file(self._file_prefix + ".item2id", sep)
+
+        # statistical information
+        data_info = [(max(data[_USER]), max(data[_ITEM]), len(data))
+                     for data in [_train_data, _valid_data, _test_data] if not data.empty]
+        self.num_users = max([d[0] for d in data_info]) + 1
+        self.num_items = max([d[1] for d in data_info]) + 1
+        self.num_ratings = sum([d[2] for d in data_info])
+
+        # convert to to the object of ImplicitFeedback
+        self.train_data = ImplicitFeedback(_train_data, num_users=self.num_users, num_items=self.num_items)
+        self.valid_data = ImplicitFeedback(_valid_data, num_users=self.num_users, num_items=self.num_items)
+        self.test_data = ImplicitFeedback(_test_data, num_users=self.num_users, num_items=self.num_items)
+
+    @property
+    def statistic_info(self):
+        """The statistic of dataset.
+
+        Returns:
+            str: The summary of statistic information
+        """
+        if 0 in {self.num_users, self.num_items, self.num_ratings}:
+            return ""
+        else:
+            num_users, num_items = self.num_users, self.num_items
+            num_ratings = self.num_ratings
+            sparsity = 1 - 1.0 * num_ratings / (num_users * num_items)
+
+            statistic = ["Dataset statistic information:",
+                         f"Name: {self.data_name}",
+                         f"The number of users: {num_users}",
+                         f"The number of items: {num_items}",
+                         f"The number of ratings: {num_ratings}",
+                         f"Average actions of users: {(1.0 * num_ratings / num_users):.2f}",
+                         f"Average actions of items: {(1.0 * num_ratings / num_items):.2f}",
+                         f"The sparsity of the dataset: {(sparsity * 100):.6f}%%",
+                         "",
+                         f"The number of training: {len(self.train_data)}",
+                         f"The number of validation: {len(self.valid_data)}",
+                         f"The number of testing: {len(self.test_data)}"
+                         ]
+
+            statistic = "\n".join(statistic)
+            return statistic
+
+    def _is_cache_modified(self) -> bool:
         return self.train_data.is_cache_modified() or \
                self.valid_data.is_cache_modified() or \
                self.test_data.is_cache_modified()
@@ -473,64 +475,184 @@ class CFDataset(metaclass=PostInitMeta):
             warnings.warn(f"_loads_cached_data error: {e}")
 
 
-class KGDataset(CFDataset):
-    def __init__(self, data_dir, sep, columns):
-        super().__init__(data_dir, sep, columns)
+class KGData(CacheOpt):
+    def __init__(self, data_dir, sep):
+        super().__init__()
+        self._data_dir = data_dir
+        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + "_kg" + ".bin")
         self._load_kg_data(sep)
+
+    @property
+    def data_dir(self):
+        return self._data_dir
+
+    @property
+    def data_name(self):
+        return os.path.split(self.data_dir)[-1]
+
+    @property
+    def _file_prefix(self):
+        return os.path.join(self.data_dir, self.data_name)
 
     def _load_kg_data(self, sep):
         # Load knowledge graph data
         def raise_error(err: str): raise FileNotFoundError(err)
-        _kg_data = self._read_csv(self._file_prefix + ".kg", sep=sep, names=[_HEAD, _RELATION, _TAIL],
-                                  header=None, handle=raise_error)
+        _kg_data = _read_csv(self._file_prefix + ".kg", sep=sep, names=[_HEAD, _RELATION, _TAIL],
+                             header=None, handle=raise_error)
         if _kg_data.isnull().values.any():
             warnings.warn(f"'Knowledge graph data has None value, please check the file or the separator.")
         _kg_data = _kg_data.drop_duplicates()
 
         self.kg_data = KnowledgeGraph(_kg_data)
-        self.num_entities = self.kg_data.num_entities
-        self.num_relations = self.kg_data.num_relations
-        self.num_triplets = self.kg_data.num_triplets
 
     @property
     def statistic_info(self):
-        cf_info = super().statistic_info
         statistic = ["",
-                     f"The number of entities: {self.num_entities}",
-                     f"The number of relations: {self.num_relations}",
-                     f"The number of triplets: {self.num_triplets}"
+                     f"The number of entities: {self.kg_data.num_entities}",
+                     f"The number of relations: {self.kg_data.num_relations}",
+                     f"The number of triplets: {self.kg_data.num_triplets}"
                      ]
         kg_info = "\n".join(statistic)
 
-        return cf_info + kg_info
+        return kg_info
 
     def _is_cache_modified(self) -> bool:
-        return super()._is_cache_modified() or self.kg_data.is_cache_modified()
+        return self.kg_data.is_cache_modified()
 
     def _is_data_updated(self) -> bool:
-        if super()._is_data_updated():
+        if not os.path.exists(self._cache_file):
             return True
         cached_time = os.path.getmtime(self._cache_file)
         kg_time = os.path.getmtime(self._file_prefix + ".kg")
         return kg_time > cached_time
 
     def _dumps_cached_data(self):
-        _t_data = super()._dumps_cached_data()
+        _t_data = dict()
         _t_data["kg_data"] = self.kg_data.dumps_cached_data()
         return _t_data
 
     def _loads_cached_data(self, _t_data):
         # load cached data
-        super()._loads_cached_data(_t_data)
         try:
             self.kg_data.loads_cached_data(_t_data["kg_data"])
         except Exception as e:
             warnings.warn(f"_loads_cached_data error: {e}")
 
 
-class SocialDataset(CFDataset):
-    # TODO
+class MMData(object):
+    def __init__(self):
+        self.img_features = None
+        self.img_dim = None
+        self.txt_features = None
+        self.txt_dim = None
+        self.audio_features = None
+        self.audio_dim = None
+
+
+class SocialData(CacheOpt):
     pass
+
+
+class RSDataset(object):
+    def __init__(self, data_dir, sep, columns):
+        self._data_dir = data_dir
+        self.sep = sep
+        self.columns = columns
+        self._log_print = print
+
+    @property
+    def data_dir(self) -> str:
+        return self._data_dir
+
+    @property
+    def data_name(self) -> str:
+        return os.path.split(self.data_dir)[-1]
+
+    def set_logger(self, logger):
+        self._log_print = logger.info
+
+    @property
+    def cf_data(self) -> CFData:
+        if not hasattr(self, "_cf_data"):
+            _cf_data = CFData(self.data_dir, self.sep, self.columns)
+            self._cf_data = _cf_data
+            # logging data statistic info
+            self._log_print(_cf_data.statistic_info)
+        return self._cf_data
+
+    @property
+    def train_data(self) -> ImplicitFeedback:
+        return self.cf_data.train_data
+
+    @property
+    def valid_data(self) -> ImplicitFeedback:
+        return self.cf_data.valid_data
+
+    @property
+    def test_data(self) -> ImplicitFeedback:
+        return self.cf_data.test_data
+
+    @property
+    def num_users(self) -> int:
+        return self.cf_data.num_users
+
+    @property
+    def num_items(self) -> int:
+        return self.cf_data.num_items
+
+    @property
+    def num_ratings(self) -> int:
+        return self.cf_data.num_ratings
+
+    @property
+    def kg_data(self) -> KnowledgeGraph:
+        if not hasattr(self, "_kg_data"):
+            _kg_data = KGData(self.data_dir, self.sep)
+            self._kg_data = _kg_data
+            self._log_print(_kg_data.statistic_info)
+        return self._kg_data.kg_data
+
+    @property
+    def num_entities(self) -> int:
+        return self.kg_data.num_entities
+
+    @property
+    def num_relations(self) -> int:
+        return self.kg_data.num_relations
+
+    @num_relations.setter
+    def num_relations(self, num: int):
+        self.kg_data.num_relations = num
+
+    @property
+    def num_triplets(self) -> int:
+        return self.kg_data.num_triplets
+
+    @property
+    def mm_data(self) -> MMData:
+        if not hasattr(self, "_mm_data"):
+            _mm_data = MMData()
+            self._mm_data = _mm_data
+            self._log_print(_mm_data.statistic_info)
+        return self._mm_data
+
+    @property
+    def social_data(self) -> SocialData:
+        # if not hasattr(self, "_social_data"):
+        #     _social_data = SocialData()
+        #     self._social_data = _social_data
+        #     self._log_print(_social_data.statistic_info)
+        # return self._social_data
+        raise NotImplementedError
+
+    @property
+    def statistic_info(self) -> str:
+        info_str = []
+        for attr in ["_cf_data", "_kg_data", "_social_data", "_mm_data"]:
+            if hasattr(self, attr):
+                info_str.append(getattr(self, attr).statistic_info)
+        info_str = "\n\n".join(info_str)
+        return info_str
 
 
 class UserGroup(object):
@@ -542,7 +664,7 @@ class UserGroup(object):
         self.activities = activities
 
 
-def group_users_by_interactions(dataset: CFDataset, num_groups=4) -> List[UserGroup]:
+def group_users_by_interactions(dataset: RSDataset, num_groups=4) -> List[UserGroup]:
     user_groups = defaultdict(list)
     user_pos_train = dataset.train_data.to_user_dict()
     for user, item_seq in user_pos_train.items():

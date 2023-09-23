@@ -24,7 +24,6 @@ from ..io import PairwiseIterator
 from ..utils.common import normalize_adj_matrix
 from ..utils.torch import sp_mat_to_sp_tensor
 from ..utils.py import Config
-from ..io.dataset import CFDataset
 from ..run_config import RunConfig
 
 
@@ -115,9 +114,8 @@ class _LightGCN(nn.Module):
 
 class LightGCN(AbstractRecommender):
     def __init__(self, run_config: RunConfig, model_config: Dict):
-        self.dataset = CFDataset(run_config.data_dir, run_config.sep, run_config.file_column)
         self.config = LightGCNConfig(**model_config)
-        super().__init__(run_config, self.config, self.dataset)
+        super().__init__(run_config, self.config)
         config = self.config
 
         self.num_users, self.num_items = self.dataset.num_users, self.dataset.num_items
