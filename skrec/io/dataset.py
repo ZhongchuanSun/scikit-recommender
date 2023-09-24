@@ -274,6 +274,29 @@ class SocialNetwork(DataCacheABC):
     pass
 
 
+class DataMeta(object):
+    def __init__(self, data_dir, sep, columns):
+        self._data_dir = data_dir
+        self.sep = sep
+        self.columns = columns
+
+    @property
+    def data_dir(self) -> str:
+        return self._data_dir
+
+    @property
+    def data_name(self) -> str:
+        return os.path.split(self.data_dir)[-1]
+
+    @property
+    def file_prefix(self):
+        return os.path.join(self.data_dir, self.data_name)
+
+    @property
+    def cache_dir(self) -> str:
+        return os.path.join(self.data_name, "_data_cache")
+
+
 class CacheOpt(metaclass=PostInitMeta):
     def __init__(self, cache_file=None):
         self._cache_file: str = cache_file
@@ -293,6 +316,9 @@ class CacheOpt(metaclass=PostInitMeta):
 
     def _write_to_cache_file(self, cache_data):
         try:
+            _cache_dir = os.path.dirname(self._cache_file)
+            if not os.path.exists(_cache_dir):
+                os.makedirs(_cache_dir)
             with open(self._cache_file, 'wb') as fout:
                 pickle.dump(cache_data, fout)
         except Exception as e:
@@ -338,27 +364,15 @@ class CacheOpt(metaclass=PostInitMeta):
 
 
 class CFData(CacheOpt):
-    def __init__(self, data_dir, sep, columns):
+    def __init__(self, d_m: DataMeta):
         super().__init__()
-        self._data_dir = data_dir
-        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + "_cf" + ".bin")
-        self._load_cf_data(sep, columns)
+        self._d_m = d_m
+        self._cache_file = os.path.join(d_m.cache_dir, d_m.data_name + "_cf" + ".bin")
+        self._load_cf_data(d_m.sep, d_m.columns)
 
     def __post_init__(self):
         self._restore_cached_data()  # restore the cached data after initializing the object
         atexit.register(self._save_cached_data)  # dump the cached data before destroying the object
-
-    @property
-    def data_dir(self) -> str:
-        return self._data_dir
-
-    @property
-    def data_name(self) -> str:
-        return os.path.split(self.data_dir)[-1]
-
-    @property
-    def _file_prefix(self) -> str:
-        return os.path.join(self.data_dir, self.data_name)
 
     @staticmethod
     def _read_map_file(map_file, sep):
@@ -382,11 +396,11 @@ class CFData(CacheOpt):
 
         # load data
         def raise_error(err: str): raise FileNotFoundError(err)
-        _train_data = _read_csv(self._file_prefix + ".train", sep=sep, names=columns,
+        _train_data = _read_csv(self._d_m.file_prefix + ".train", sep=sep, names=columns,
                                 header=None, handle=raise_error)
-        _valid_data = _read_csv(self._file_prefix + ".valid", sep=sep, names=columns,
+        _valid_data = _read_csv(self._d_m.file_prefix + ".valid", sep=sep, names=columns,
                                 header=None, handle=warnings.warn)
-        _test_data = _read_csv(self._file_prefix + ".test", sep=sep, names=columns,
+        _test_data = _read_csv(self._d_m.file_prefix + ".test", sep=sep, names=columns,
                                header=None, handle=raise_error)
 
         if _train_data.isnull().values.any():
@@ -396,8 +410,8 @@ class CFData(CacheOpt):
         if _test_data.isnull().values.any():
             warnings.warn(f"'Test data has None value, please check the file or the separator.")
 
-        self.user2id, self.id2user = self._read_map_file(self._file_prefix + ".user2id", sep)
-        self.item2id, self.id2item = self._read_map_file(self._file_prefix + ".item2id", sep)
+        self.user2id, self.id2user = self._read_map_file(self._d_m.file_prefix + ".user2id", sep)
+        self.item2id, self.id2item = self._read_map_file(self._d_m.file_prefix + ".item2id", sep)
 
         # statistical information
         data_info = [(max(data[_USER]), max(data[_ITEM]), len(data))
@@ -426,7 +440,7 @@ class CFData(CacheOpt):
             sparsity = 1 - 1.0 * num_ratings / (num_users * num_items)
 
             statistic = ["Dataset statistic information:",
-                         f"Name: {self.data_name}",
+                         f"Name: {self._d_m.data_name}",
                          f"The number of users: {num_users}",
                          f"The number of items: {num_items}",
                          f"The number of ratings: {num_ratings}",
@@ -453,7 +467,7 @@ class CFData(CacheOpt):
         cached_time = os.path.getmtime(self._cache_file)
 
         for file_suffix in [".train", ".test", ".valid"]:
-            filename = self._file_prefix + file_suffix
+            filename = self._d_m.file_prefix + file_suffix
             if os.path.exists(filename) and os.path.getmtime(filename) > cached_time:
                 return True
         return False
@@ -476,28 +490,16 @@ class CFData(CacheOpt):
 
 
 class KGData(CacheOpt):
-    def __init__(self, data_dir, sep):
+    def __init__(self, d_m: DataMeta):
         super().__init__()
-        self._data_dir = data_dir
-        self._cache_file = os.path.join(self.data_dir, "_cache_" + self.data_name + "_kg" + ".bin")
-        self._load_kg_data(sep)
-
-    @property
-    def data_dir(self) -> str:
-        return self._data_dir
-
-    @property
-    def data_name(self) -> str:
-        return os.path.split(self.data_dir)[-1]
-
-    @property
-    def _file_prefix(self) -> str:
-        return os.path.join(self.data_dir, self.data_name)
+        self._d_m = d_m
+        self._cache_file = os.path.join(d_m.cache_dir, d_m.data_name + "_kg" + ".bin")
+        self._load_kg_data(d_m.sep)
 
     def _load_kg_data(self, sep):
         # Load knowledge graph data
         def raise_error(err: str): raise FileNotFoundError(err)
-        _kg_data = _read_csv(self._file_prefix + ".kg", sep=sep, names=[_HEAD, _RELATION, _TAIL],
+        _kg_data = _read_csv(self._d_m.file_prefix + ".kg", sep=sep, names=[_HEAD, _RELATION, _TAIL],
                              header=None, handle=raise_error)
         if _kg_data.isnull().values.any():
             warnings.warn(f"'Knowledge graph data has None value, please check the file or the separator.")
@@ -523,7 +525,7 @@ class KGData(CacheOpt):
         if not os.path.exists(self._cache_file):
             return True
         cached_time = os.path.getmtime(self._cache_file)
-        kg_time = os.path.getmtime(self._file_prefix + ".kg")
+        kg_time = os.path.getmtime(self._d_m.file_prefix + ".kg")
         return kg_time > cached_time
 
     def _dumps_cached_data(self):
@@ -540,21 +542,9 @@ class KGData(CacheOpt):
 
 
 class MMData(object):
-    def __init__(self, data_dir):
-        self._data_dir = data_dir
+    def __init__(self, d_m: DataMeta):
+        self._d_m = d_m
         self._load_mm_data()
-
-    @property
-    def data_dir(self) -> str:
-        return self._data_dir
-
-    @property
-    def data_name(self) -> str:
-        return os.path.split(self.data_dir)[-1]
-
-    @property
-    def _file_prefix(self) -> str:
-        return os.path.join(self.data_dir, self.data_name)
 
     @staticmethod
     def _load_npz_features(file_path):
@@ -566,9 +556,9 @@ class MMData(object):
             return None, None
 
     def _load_mm_data(self):
-        self.img_features, self.img_dim = self._load_npz_features(self._file_prefix + ".img.npz")
-        self.txt_features, self.txt_dim = self._load_npz_features(self._file_prefix + ".txt.npz")
-        self.audio_features, self.audio_dim = self._load_npz_features(self._file_prefix + ".audio.npz")
+        self.img_features, self.img_dim = self._load_npz_features(self._d_m.file_prefix + ".img.npz")
+        self.txt_features, self.txt_dim = self._load_npz_features(self._d_m.file_prefix + ".txt.npz")
+        self.audio_features, self.audio_dim = self._load_npz_features(self._d_m.file_prefix + ".audio.npz")
 
     @property
     def statistic_info(self) -> str:
@@ -589,20 +579,10 @@ class SocialData(CacheOpt):
     pass
 
 
-class RSDataset(object):
+class RSDataset(DataMeta):
     def __init__(self, data_dir, sep, columns):
-        self._data_dir = data_dir
-        self.sep = sep
-        self.columns = columns
+        super().__init__(data_dir, sep, columns)
         self._log_print = print
-
-    @property
-    def data_dir(self) -> str:
-        return self._data_dir
-
-    @property
-    def data_name(self) -> str:
-        return os.path.split(self.data_dir)[-1]
 
     def set_logger(self, logger):
         self._log_print = logger.info
@@ -610,7 +590,7 @@ class RSDataset(object):
     @property
     def cf_data(self) -> CFData:
         if not hasattr(self, "_cf_data"):
-            _cf_data = CFData(self.data_dir, self.sep, self.columns)
+            _cf_data = CFData(self)
             self._cf_data = _cf_data
             # logging data statistic info
             self._log_print(_cf_data.statistic_info)
@@ -643,7 +623,7 @@ class RSDataset(object):
     @property
     def kg_data(self) -> KnowledgeGraph:
         if not hasattr(self, "_kg_data"):
-            _kg_data = KGData(self.data_dir, self.sep)
+            _kg_data = KGData(self)
             self._kg_data = _kg_data
             self._log_print(_kg_data.statistic_info)
         return self._kg_data.kg_data
@@ -667,7 +647,7 @@ class RSDataset(object):
     @property
     def mm_data(self) -> MMData:
         if not hasattr(self, "_mm_data"):
-            _mm_data = MMData(self.data_dir)
+            _mm_data = MMData(self)
             self._mm_data = _mm_data
             self._log_print(_mm_data.statistic_info)
         return self._mm_data
