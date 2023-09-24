@@ -294,7 +294,7 @@ class DataMeta(object):
 
     @property
     def cache_dir(self) -> str:
-        return os.path.join(self.data_name, "_data_cache")
+        return os.path.join(self.data_dir, "_data_cache")
 
 
 class CacheOpt(metaclass=PostInitMeta):
