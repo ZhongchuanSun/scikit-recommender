@@ -39,7 +39,7 @@ class AbstractRecommender(object):
         # run_id: data_name, model_name, hyper-parameters, timestamp
         run_id = f"{param_str}_{timestamp:.8f}"
 
-        log_dir = os.path.join("log", data_name, self.__class__.__name__)
+        log_dir = os.path.join("log", dataset.data_dir, self.__class__.__name__)
         logger_name = os.path.join(log_dir, run_id + ".log")
         logger = Logger(logger_name)
 

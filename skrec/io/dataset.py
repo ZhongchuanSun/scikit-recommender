@@ -349,15 +349,15 @@ class CFData(CacheOpt):
         atexit.register(self._save_cached_data)  # dump the cached data before destroying the object
 
     @property
-    def data_dir(self):
+    def data_dir(self) -> str:
         return self._data_dir
 
     @property
-    def data_name(self):
+    def data_name(self) -> str:
         return os.path.split(self.data_dir)[-1]
 
     @property
-    def _file_prefix(self):
+    def _file_prefix(self) -> str:
         return os.path.join(self.data_dir, self.data_name)
 
     @staticmethod
@@ -412,7 +412,7 @@ class CFData(CacheOpt):
         self.test_data = ImplicitFeedback(_test_data, num_users=self.num_users, num_items=self.num_items)
 
     @property
-    def statistic_info(self):
+    def statistic_info(self) -> str:
         """The statistic of dataset.
 
         Returns:
@@ -483,15 +483,15 @@ class KGData(CacheOpt):
         self._load_kg_data(sep)
 
     @property
-    def data_dir(self):
+    def data_dir(self) -> str:
         return self._data_dir
 
     @property
-    def data_name(self):
+    def data_name(self) -> str:
         return os.path.split(self.data_dir)[-1]
 
     @property
-    def _file_prefix(self):
+    def _file_prefix(self) -> str:
         return os.path.join(self.data_dir, self.data_name)
 
     def _load_kg_data(self, sep):
@@ -506,7 +506,7 @@ class KGData(CacheOpt):
         self.kg_data = KnowledgeGraph(_kg_data)
 
     @property
-    def statistic_info(self):
+    def statistic_info(self) -> str:
         statistic = ["",
                      f"The number of entities: {self.kg_data.num_entities}",
                      f"The number of relations: {self.kg_data.num_relations}",
@@ -540,13 +540,49 @@ class KGData(CacheOpt):
 
 
 class MMData(object):
-    def __init__(self):
-        self.img_features = None
-        self.img_dim = None
-        self.txt_features = None
-        self.txt_dim = None
-        self.audio_features = None
-        self.audio_dim = None
+    def __init__(self, data_dir):
+        self._data_dir = data_dir
+        self._load_mm_data()
+
+    @property
+    def data_dir(self) -> str:
+        return self._data_dir
+
+    @property
+    def data_name(self) -> str:
+        return os.path.split(self.data_dir)[-1]
+
+    @property
+    def _file_prefix(self) -> str:
+        return os.path.join(self.data_dir, self.data_name)
+
+    @staticmethod
+    def _load_npz_features(file_path):
+        if os.path.exists(file_path):
+            feat_obj = np.load(file_path, allow_pickle=True)
+            features = feat_obj[feat_obj.files[0]]
+            return features, features.shape[-1]
+        else:
+            return None, None
+
+    def _load_mm_data(self):
+        self.img_features, self.img_dim = self._load_npz_features(self._file_prefix + ".img.npz")
+        self.txt_features, self.txt_dim = self._load_npz_features(self._file_prefix + ".txt.npz")
+        self.audio_features, self.audio_dim = self._load_npz_features(self._file_prefix + ".audio.npz")
+
+    @property
+    def statistic_info(self) -> str:
+        statistic = [""]
+        if self.img_features is not None:
+            statistic.append(f"The shape of image features: {self.img_features.shape}")
+        if self.txt_features is not None:
+            statistic.append(f"The shape of txt features: {self.txt_features.shape}")
+        if self.audio_features is not None:
+            statistic.append(f"The shape of audio features: {self.audio_features.shape}")
+
+        mm_info = "\n".join(statistic)
+
+        return mm_info
 
 
 class SocialData(CacheOpt):
@@ -631,10 +667,34 @@ class RSDataset(object):
     @property
     def mm_data(self) -> MMData:
         if not hasattr(self, "_mm_data"):
-            _mm_data = MMData()
+            _mm_data = MMData(self.data_dir)
             self._mm_data = _mm_data
             self._log_print(_mm_data.statistic_info)
         return self._mm_data
+
+    @property
+    def img_features(self) -> np.ndarray:
+        return self.mm_data.img_features
+
+    @property
+    def img_dim(self) -> int:
+        return self.mm_data.img_dim
+
+    @property
+    def txt_features(self) -> np.ndarray:
+        return self.mm_data.txt_features
+
+    @property
+    def txt_dim(self) -> int:
+        return self.mm_data.txt_dim
+
+    @property
+    def audio_features(self) -> np.ndarray:
+        return self.mm_data.audio_features
+
+    @property
+    def audio_dim(self) -> int:
+        return self.mm_data.audio_dim
 
     @property
     def social_data(self) -> SocialData:
