@@ -441,6 +441,7 @@ class CFData(CacheOpt):
 
             statistic = ["Dataset statistic information:",
                          f"Name: {self._d_m.data_name}",
+                         f"Name: {os.path.abspath(self._d_m.data_dir)}",
                          f"The number of users: {num_users}",
                          f"The number of items: {num_items}",
                          f"The number of ratings: {num_ratings}",

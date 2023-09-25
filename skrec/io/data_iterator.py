@@ -1,7 +1,7 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["PointwiseIterator", "PairwiseIterator",
+__all__ = ["PointwiseIterator", "PairwiseIterator", "InteractionIterator",
            "SequentialPointwiseIterator", "SequentialPairwiseIterator",
            "UserVecIterator", "ItemVecIterator",
            "KGPairwiseIterator"
@@ -92,6 +92,34 @@ def _sampling_negative_items(user_n_pos: OrderedDict, num_neg: int, num_items: i
         neg_items_list.append(neg_items)
 
     return np.concatenate(neg_items_list)
+
+
+class InteractionIterator(_Iterator):
+    def __init__(self, dataset: ImplicitFeedback, batch_size: int = 1024,
+                 shuffle: bool = True, drop_last: bool = False):
+        super(InteractionIterator, self).__init__()
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.drop_last = drop_last
+
+        ui_pairs = dataset.to_user_item_pairs()
+        self.users = ui_pairs[:, 0]
+        self.pos_items = ui_pairs[:, 1]
+
+    def __len__(self):
+        n_sample = len(self.users)
+        if self.drop_last:
+            return n_sample // self.batch_size
+        else:
+            return (n_sample + self.batch_size - 1) // self.batch_size
+
+    def __iter__(self):
+        data_iter = BatchIterator(self.users, self.pos_items,
+                                  batch_size=self.batch_size,
+                                  shuffle=self.shuffle, drop_last=self.drop_last)
+
+        for bat_users, bat_items in data_iter:
+            yield np.asarray(bat_users), np.asarray(bat_items)
 
 
 class PointwiseIterator(_Iterator):
