@@ -33,12 +33,12 @@ def _set_random_seed(seed=2020):
 
 def main():
     # read config
-    run_dict = {"recommender": "MCCLK",
-                "data_dir": "dataset/book",
+    run_dict = {"recommender": "LayerGCN",
+                "data_dir": "dataset_mm/baby",
                 "file_column": "UIRT",
                 "sep": '\t',
                 "gpu_id": 0,
-                "metric": ("Recall", "NDCG"),
+                "metric": ("Recall", "NDCG", "Precision", "MAP"),
                 "top_k": (10, 20, 30, 40, 50),
                 "test_thread": 4,
                 "test_batch_size": 64,
@@ -58,7 +58,7 @@ def main():
     if not model_class:
         print(f"Recommender '{model_name}' is not found.")
 
-    model_params = {"lr": 1e-3, "epochs": 2}
+    model_params = {"lr": 1e-3, "epochs": 1000}
     model_params = merge_config_with_cmd_args(model_params)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)

@@ -51,7 +51,6 @@ jobs:
     - name: List the *.whl packages and *.tar.gz source file
       run: |
         ls dist/*.whl
-        ls dist/*.tar.gz
 
     - name: Publish wheels to PyPI
       env:
