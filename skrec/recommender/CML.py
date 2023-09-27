@@ -13,7 +13,7 @@ import tensorflow as tf
 from tensorflow import keras
 from typing import Dict
 from .base import AbstractRecommender
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.py import EarlyStopping
 from ..utils.py import BatchIterator
 from ..utils.tf1x import euclidean_distance, hinge_loss
@@ -21,7 +21,7 @@ from ..io.data_iterator import _generate_positive_items, _sampling_negative_item
 from ..run_config import RunConfig
 
 
-class CMLConfig(Config):
+class CMLConfig(ModelConfig):
     def __init__(self,
                  lr=0.05,
                  reg=10.0,
@@ -43,7 +43,6 @@ class CMLConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -174,6 +173,7 @@ class CML(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         return self.evaluator.evaluate(self, test_users)

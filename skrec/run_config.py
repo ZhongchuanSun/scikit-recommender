@@ -10,6 +10,7 @@ class RunConfig(Config):
                  data_dir="dataset/Beauty_loo_u5_i5",
                  file_column="UIRT",
                  sep='\t',
+                 hyperopt=False,
                  gpu_id=0,
                  metric=("Precision", "Recall", "MAP", "NDCG", "MRR"),
                  top_k=(10, 20, 30, 40, 50, 100),
@@ -22,6 +23,7 @@ class RunConfig(Config):
         self.data_dir: str = data_dir  # the directory of training and test sets
         self.file_column: str = file_column  # UI, UIR, UIT, UIRT
         self.sep: str = sep
+        self.hyperopt: bool = hyperopt
         self.gpu_id = gpu_id
         self.metric: Union[None, str, Tuple[str], List[str]] = metric  # ("Precision", "Recall", "MAP", "NDCG", "MRR")
         self.top_k: Union[int, List[int], Tuple[int]] = top_k
@@ -31,10 +33,11 @@ class RunConfig(Config):
         self.seed = seed
 
     def _validate(self):
-        assert isinstance(self.recommender, str) and not self.recommender
-        assert isinstance(self.data_dir, str) and not self.data_dir
-        assert isinstance(self.file_column, str) and not self.file_column
+        assert isinstance(self.recommender, str) and self.recommender
+        assert isinstance(self.data_dir, str) and self.data_dir
+        assert isinstance(self.file_column, str) and self.file_column
         assert isinstance(self.sep, str)
+        assert isinstance(self.hyperopt, bool)
         assert isinstance(self.test_batch_size, int) and self.test_batch_size > 0
         assert isinstance(self.test_thread, int) and self.test_thread > 0
         assert isinstance(self.seed, int) and self.seed >= 0

@@ -13,7 +13,7 @@ import numpy as np
 import time
 import pickle
 from typing import Dict
-from skrec.utils.py import Config
+from skrec.utils.py import ModelConfig
 from skrec.recommender.base import AbstractRecommender
 from . import modeling
 import tensorflow as tf
@@ -21,7 +21,7 @@ from .bert4rec_utils import model_fn_builder, input_fn_builder, EvalHooks
 from ...run_config import RunConfig
 
 
-class BERT4RecConfig(Config):
+class BERT4RecConfig(ModelConfig):
     def __init__(self,
                  # prepare data
                  max_seq_len=5,
@@ -183,3 +183,5 @@ class BERT4Rec(AbstractRecommender):
             cur_steps += self.steps_per_epoch*config.verbose
             self.estimator.evaluate(input_fn=self.eval_input_fn, steps=None, hooks=[eval_hook])
         self.logger.info("best:".ljust(12) + f"\t{eval_hook.early_stopping.best_result.values_str}")
+
+        return eval_hook.early_stopping.best_result

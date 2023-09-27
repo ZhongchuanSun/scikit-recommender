@@ -15,12 +15,12 @@ import tensorflow as tf
 from typing import List, Dict
 from .base import AbstractRecommender
 from ..utils.py import EarlyStopping
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.tf1x import bpr_loss, l2_loss
 from ..run_config import RunConfig
 
 
-class GRU4RecConfig(Config):
+class GRU4RecConfig(ModelConfig):
     def __init__(self,
                  lr=0.001,
                  reg=0.0,
@@ -42,7 +42,6 @@ class GRU4RecConfig(Config):
         self.final_act: str = final_act  # final_act = linear, relu, leaky_relu
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -214,6 +213,7 @@ class GRU4Rec(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def _get_user_embeddings(self):
         users = np.array(list(self.user_pos_train.keys()), dtype=np.int32)

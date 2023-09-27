@@ -18,4 +18,6 @@ from .evaluator import RankingEvaluator
 from .evaluator import MetricReport
 from .evaluator import EarlyStopping
 
-from .config import Config, merge_config_with_cmd_args
+from .config import Config
+from .config import ModelConfig
+from .config import merge_config_with_cmd_args

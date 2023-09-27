@@ -13,14 +13,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 from skrec.recommender.base import AbstractRecommender
 from skrec.run_config import RunConfig
-from skrec.utils.py import Config
+from skrec.utils.py import ModelConfig
 from skrec.io import RSDataset
 from typing import Dict, List
 from skrec.io import PairwiseIterator
 from skrec.utils.py import EarlyStopping
 
 
-class MGCNConfig(Config):
+class MGCNConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  reg=1e-4,
@@ -49,7 +49,6 @@ class MGCNConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
 
 def build_sim(context):
@@ -397,6 +396,7 @@ class MGCN(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.model.eval()

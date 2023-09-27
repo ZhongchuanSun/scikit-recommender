@@ -13,14 +13,14 @@ import numpy as np
 import scipy.sparse as sp
 from skrec.recommender.base import AbstractRecommender
 from skrec.run_config import RunConfig
-from skrec.utils.py import Config
+from skrec.utils.py import ModelConfig
 from skrec.io import RSDataset
 from skrec.io import InteractionIterator
 from skrec.utils.py import EarlyStopping
 from typing import Dict
 
 
-class SLMRecConfig(Config):
+class SLMRecConfig(ModelConfig):
     def __init__(self,
                  lr=1e-4,
                  reg=1e-4,
@@ -57,7 +57,6 @@ class SLMRecConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
 
 class _SLMRec(nn.Module):
@@ -564,6 +563,7 @@ class SLMRec(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.model.eval()

@@ -34,8 +34,8 @@ class Logger(object):
             filename (str): File name to create. The directory component of this
                 file will be created automatically if it is not existing.
         """
-        logger_name = "scikit-recommender-logger" if filename is None else filename
-        self.logger = logging.getLogger(logger_name)
+        self._logger_name = "scikit-recommender-logger" if filename is None else filename
+        self.logger = logging.getLogger(self._logger_name)
         self.logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s.%(msecs)03d: %(message)s',
                                       datefmt='%Y-%m-%d %H:%M:%S')
@@ -58,6 +58,10 @@ class Logger(object):
             fh.setFormatter(formatter)
             fh.addFilter(remove_color_filter)
             self.logger.addHandler(fh)  # add to Handler
+
+    @property
+    def logger_name(self) -> str:
+        return self._logger_name
 
     def _flush(self):
         for handler in self.logger.handlers:

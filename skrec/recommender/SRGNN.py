@@ -14,14 +14,14 @@ import numpy as np
 import tensorflow as tf
 from typing import Dict
 from .base import AbstractRecommender
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.py import EarlyStopping
 from ..utils.py import pad_sequences
 from ..utils.py import BatchIterator
 from ..run_config import RunConfig
 
 
-class SRGNNConfig(Config):
+class SRGNNConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  l2_reg=1e-5,
@@ -48,7 +48,6 @@ class SRGNNConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -216,6 +215,7 @@ class SRGNN(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def _shuffle_index(self, seq_index):
         """NOTE: two-step shuffle for saving memory"""

@@ -15,7 +15,7 @@ import torch.nn as nn
 from torch.nn.parameter import Parameter
 from typing import Dict
 from .base import AbstractRecommender
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.py import EarlyStopping
 from ..utils.torch import bpr_loss, l2_loss, l2_distance
 from ..utils.torch import get_initializer
@@ -23,7 +23,7 @@ from ..io import SequentialPairwiseIterator
 from ..run_config import RunConfig
 
 
-class TransRecConfig(Config):
+class TransRecConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  reg=0.0,
@@ -39,7 +39,6 @@ class TransRecConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -145,6 +144,7 @@ class TransRec(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.transrec.eval()

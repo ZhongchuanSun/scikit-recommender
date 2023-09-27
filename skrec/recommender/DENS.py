@@ -16,11 +16,11 @@ from collections import defaultdict
 from .base import AbstractRecommender
 from ..io import PairwiseIterator
 from ..utils.py import EarlyStopping
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..run_config import RunConfig
 
 
-class DENSConfig(Config):
+class DENSConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  l2=1e-4,
@@ -60,7 +60,6 @@ class DENSConfig(Config):
         self.alpha: float = alpha
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -460,6 +459,7 @@ class DENS(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.model.eval()

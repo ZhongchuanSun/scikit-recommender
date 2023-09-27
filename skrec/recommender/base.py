@@ -55,7 +55,7 @@ class AbstractRecommender(object):
 
         return logger
 
-    def fit(self):
+    def fit(self) -> MetricReport:
         raise NotImplementedError
 
     def evaluate(self, test_users=None) -> MetricReport:

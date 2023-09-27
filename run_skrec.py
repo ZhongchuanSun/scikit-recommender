@@ -1,10 +1,8 @@
 import os
-import logging
-from skrec.recommender.base import AbstractRecommender
 from skrec import merge_config_with_cmd_args
 from skrec import ModelRegistry
 from skrec import RunConfig
-old_handlers = logging.root.handlers[:]
+from skrec.utils.hyperopt import HyperOpt
 
 
 def _set_random_seed(seed=2020):
@@ -33,10 +31,11 @@ def _set_random_seed(seed=2020):
 
 def main():
     # read config
-    run_dict = {"recommender": "LayerGCN",
+    run_dict = {"recommender": "BPRMF",
                 "data_dir": "dataset_mm/baby",
                 "file_column": "UIRT",
                 "sep": '\t',
+                "hyperopt": True,
                 "gpu_id": 0,
                 "metric": ("Recall", "NDCG", "Precision", "MAP"),
                 "top_k": (10, 20, 30, 40, 50),
@@ -54,20 +53,20 @@ def main():
     if os.path.exists("unarchived_models"):
         registry.load_skrec_model(model_name, "unarchived_models")
 
-    model_class = registry.get_model(model_name)
+    model_class, config_class = registry.get_model(model_name)
     if not model_class:
         print(f"Recommender '{model_name}' is not found.")
 
-    model_params = {"lr": 1e-3, "epochs": 1000}
+    model_params = {"lr": 1e-3, "epochs": 500}
+    # model_params = dict()
     model_params = merge_config_with_cmd_args(model_params)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)
     os.environ['ROCR_VISIBLE_DEVICES'] = str(run_config.gpu_id)
     _set_random_seed(run_config.seed)
 
-    model: AbstractRecommender = model_class(run_config, model_params)
-    logging.root.handlers = old_handlers
-    model.fit()
+    hyperopt = HyperOpt(run_config, model_class, config_class, model_params)
+    hyperopt.run()
 
 
 if __name__ == "__main__":

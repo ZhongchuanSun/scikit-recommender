@@ -16,11 +16,11 @@ from .base import AbstractRecommender
 from ..io import PairwiseIterator
 from ..utils.torch import sp_mat_to_sp_tensor
 from ..utils.py import EarlyStopping
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..run_config import RunConfig
 
 
-class LightGCLConfig(Config):
+class LightGCLConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  lambda1=0.2,
@@ -46,7 +46,6 @@ class LightGCLConfig(Config):
         self.lambda2: float = lambda2  # l2 reg weight
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -239,6 +238,7 @@ class LightGCL(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.model.eval()

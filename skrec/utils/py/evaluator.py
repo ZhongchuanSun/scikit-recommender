@@ -29,6 +29,10 @@ class MetricReport(object):
         return '\t'.join([c+f"{m}".ljust(12)+Style.RESET_ALL
                           for c, m in zip(_colors, self.metrics())])
 
+    @property
+    def results(self) -> Dict[str, float]:
+        return self._results
+
     def values(self):
         return self._results.values()
 
@@ -210,7 +214,7 @@ class RankingEvaluator(object):
         return MetricReport(self.metrics_list, final_results)
 
 
-class EarlyStopping:
+class EarlyStopping(object):
     def __init__(self, metric: str="NDCG@10", patience: int=100):
         self._metric: str = metric
         self._patience: int = patience  # Number of epochs to wait for improvement
@@ -220,7 +224,7 @@ class EarlyStopping:
     def __call__(self, val_result: MetricReport):
         if self._best_score is None:
             self._best_score = val_result
-        elif val_result[self._metric] <= self._best_score[self._metric]:
+        elif val_result[self.key_metric] <= self._best_score[self.key_metric]:
             self._counter += 1
             if self._counter >= self._patience > 0:
                 return True  # Trigger the stop condition for training
@@ -229,6 +233,10 @@ class EarlyStopping:
             self._counter = 0
 
         return False  # Continue training
+
+    @property
+    def key_metric(self) -> str:
+        return self._metric
 
     @property
     def best_result(self) -> MetricReport:

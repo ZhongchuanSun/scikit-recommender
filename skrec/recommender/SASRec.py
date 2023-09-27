@@ -15,8 +15,46 @@ from .base import AbstractRecommender
 from ..utils.py import EarlyStopping
 from ..utils.tf1x import inner_product
 from ..utils.py import pad_sequences, batch_randint_choice, BatchIterator
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..run_config import RunConfig
+
+
+class SASRecConfig(ModelConfig):
+    def __init__(self,
+                 lr=1e-3,
+                 l2_emb=0.0,
+                 hidden_units=64,
+                 dropout_rate=0.5,
+                 max_len=50,
+                 num_blocks=2,
+                 num_heads=1,
+                 batch_size=128,
+                 epochs=1000,
+                 early_stop=100,
+                 **kwargs):
+        super().__init__()
+        self.lr: float = lr
+        self.l2_emb: float = l2_emb
+        self.hidden_units: int = hidden_units
+        self.dropout_rate: float = dropout_rate
+        self.max_len: int = max_len
+        self.num_blocks: int = num_blocks
+        self.num_heads: int = num_heads
+        self.batch_size: int = batch_size
+        self.epochs: int = epochs
+        self.early_stop: int = early_stop
+
+    def _validate(self):
+        assert isinstance(self.lr, float) and self.lr > 0
+        assert isinstance(self.l2_emb, float) and self.l2_emb >= 0
+        assert isinstance(self.hidden_units, int) and self.hidden_units > 0
+        assert isinstance(self.dropout_rate, float) and 1 > self.dropout_rate >= 0
+        assert isinstance(self.max_len, int) and self.max_len > 0
+        assert isinstance(self.num_blocks, int) and self.num_blocks > 0
+        assert isinstance(self.num_heads, int) and self.num_heads > 0
+        assert isinstance(self.batch_size, int) and self.batch_size > 0
+        assert isinstance(self.epochs, int) and self.epochs >= 0
+        assert isinstance(self.early_stop, int)
 
 
 def normalize(inputs,
@@ -270,45 +308,6 @@ def feedforward(inputs,
     return outputs
 
 
-class SASRecConfig(Config):
-    def __init__(self,
-                 lr=1e-3,
-                 l2_emb=0.0,
-                 hidden_units=64,
-                 dropout_rate=0.5,
-                 max_len=50,
-                 num_blocks=2,
-                 num_heads=1,
-                 batch_size=128,
-                 epochs=1000,
-                 early_stop=100,
-                 **kwargs):
-        super().__init__()
-        self.lr: float = lr
-        self.l2_emb: float = l2_emb
-        self.hidden_units: int = hidden_units
-        self.dropout_rate: float = dropout_rate
-        self.max_len: int = max_len
-        self.num_blocks: int = num_blocks
-        self.num_heads: int = num_heads
-        self.batch_size: int = batch_size
-        self.epochs: int = epochs
-        self.early_stop: int = early_stop
-        self._validate()
-
-    def _validate(self):
-        assert isinstance(self.lr, float) and self.lr > 0
-        assert isinstance(self.l2_emb, float) and self.l2_emb >= 0
-        assert isinstance(self.hidden_units, int) and self.hidden_units > 0
-        assert isinstance(self.dropout_rate, float) and 1 > self.dropout_rate >= 0
-        assert isinstance(self.max_len, int) and self.max_len > 0
-        assert isinstance(self.num_blocks, int) and self.num_blocks > 0
-        assert isinstance(self.num_heads, int) and self.num_heads > 0
-        assert isinstance(self.batch_size, int) and self.batch_size > 0
-        assert isinstance(self.epochs, int) and self.epochs >= 0
-        assert isinstance(self.early_stop, int)
-
-
 class SASRec(AbstractRecommender):
     def __init__(self, run_config: RunConfig, model_config: Dict):
         self.config = SASRecConfig(**model_config)
@@ -486,6 +485,7 @@ class SASRec(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         return self.evaluator.evaluate(self, test_users)

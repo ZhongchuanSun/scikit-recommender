@@ -1,13 +1,15 @@
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["Config", "merge_config_with_cmd_args"]
+__all__ = ["Config", "ModelConfig", "merge_config_with_cmd_args"]
 
 import sys
-from typing import Dict
+from typing import Dict, List
 from collections import OrderedDict
 from argparse import Namespace
 import copy
+import numpy as np
+from skrec.utils.common import PostInitMeta
 
 
 class OrderedNamespace(Namespace):
@@ -32,9 +34,12 @@ class OrderedNamespace(Namespace):
             yield (key, value)
 
 
-class Config(OrderedNamespace):
+class Config(OrderedNamespace, metaclass=PostInitMeta):
     def __init__(self):
         super(Config, self).__init__()
+
+    def __post_init__(self):
+        self._validate()
 
     def _validate(self):
         pass
@@ -42,6 +47,20 @@ class Config(OrderedNamespace):
     def to_string(self, sep: str='\n'):
         arg_strings = [f"{key}={value}" for key, value in self.items()]
         return sep.join(arg_strings)
+
+
+class ModelConfig(Config):
+    def __init__(self):
+        super(ModelConfig, self).__init__()
+
+    @classmethod
+    def param_space(cls) -> Dict[str, List]:
+        return dict()
+
+    @classmethod
+    def num_combos(cls) -> int:
+        len_values = [len(values) for param, values in cls.param_space().items()]
+        return int(np.prod(len_values))
 
 
 def merge_config_with_cmd_args(config: Dict, inplace: bool = True) -> Dict:

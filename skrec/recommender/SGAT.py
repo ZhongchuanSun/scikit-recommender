@@ -16,7 +16,7 @@ import scipy.sparse as sp
 from typing import Dict
 from collections import defaultdict
 from .base import AbstractRecommender
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.py import EarlyStopping
 from ..utils.py import pad_sequences
 from ..utils.tf1x import bpr_loss, l2_loss, l2_distance
@@ -25,7 +25,7 @@ from ..utils.common import normalize_adj_matrix
 from ..run_config import RunConfig
 
 
-class SGATConfig(Config):
+class SGATConfig(ModelConfig):
     def __init__(self,
                  lr=0.001,
                  reg=1e-4,
@@ -47,7 +47,6 @@ class SGATConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -325,6 +324,7 @@ class SGAT(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.sess.run(self.assign_opt)

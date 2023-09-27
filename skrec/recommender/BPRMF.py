@@ -14,13 +14,13 @@ import numpy as np
 from typing import Dict
 from .base import AbstractRecommender
 from ..run_config import RunConfig
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.py import EarlyStopping
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..io import PairwiseIterator
 
 
-class BPRMFConfig(Config):
+class BPRMFConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  reg=1e-3,
@@ -36,7 +36,13 @@ class BPRMFConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
+
+    @classmethod
+    def param_space(cls):
+        space = {"lr": [0.001, 0.005, 0.01, 0.05],
+                 "reg": [0.0, 0.001, 0.005, 0.01, 0.05]
+                 }
+        return space
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -130,6 +136,7 @@ class BPRMF(AbstractRecommender):
         # group_results = self.evaluate_group()
         # result = "\n".join([f"{label}:".ljust(12) + result.values_str for label, result in group_results])
         # self.logger.info("\n"+result)
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.mf.eval()

@@ -6,12 +6,12 @@ __all__ = ["Pop"]
 import numpy as np
 import pandas as pd
 from typing import Dict
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from .base import AbstractRecommender
 from ..run_config import RunConfig
 
 
-class PopConfig(Config):
+class PopConfig(ModelConfig):
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -33,6 +33,7 @@ class Pop(AbstractRecommender):
 
         result = self.evaluate()
         self.logger.info(f"Pop results:".ljust(12) + f"\t{result.values_str}")
+        return result
 
     def evaluate(self, test_users=None):
         return self.evaluator.evaluate(self, test_users)

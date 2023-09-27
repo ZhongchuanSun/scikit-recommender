@@ -15,7 +15,7 @@ import numpy as np
 import torch.nn.functional as F
 from typing import Dict
 from .base import AbstractRecommender
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.py import EarlyStopping
 from ..utils.torch import get_initializer
 from ..utils.torch import sigmoid_cross_entropy
@@ -23,7 +23,7 @@ from ..io import SequentialPairwiseIterator
 from ..run_config import RunConfig
 
 
-class CaserConfig(Config):
+class CaserConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  l2_reg=1e-6,
@@ -49,7 +49,6 @@ class CaserConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -214,6 +213,7 @@ class Caser(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.caser.eval()

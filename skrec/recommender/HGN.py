@@ -16,13 +16,13 @@ from torch.nn import Parameter
 from typing import Dict
 from .base import AbstractRecommender
 from ..utils.py import EarlyStopping
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.torch import bpr_loss, get_initializer
 from ..io import SequentialPairwiseIterator
 from ..run_config import RunConfig
 
 
-class HGNConfig(Config):
+class HGNConfig(ModelConfig):
     def __init__(self,
                  lr=1e-3,
                  reg=1e-3,
@@ -42,7 +42,6 @@ class HGNConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -214,6 +213,7 @@ class HGN(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.hgn.eval()

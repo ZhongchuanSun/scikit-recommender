@@ -13,7 +13,7 @@ from typing import Dict
 from ..base import AbstractRecommender
 from ...io import PairwiseIterator
 from ...utils.py import randint_choice
-from ...utils.py import Config
+from ...utils.py import ModelConfig
 from ...utils.py import EarlyStopping
 from ...run_config import RunConfig
 from .pyx_aobpr_func import aobpr_update
@@ -21,7 +21,7 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-class AOBPRConfig(Config):
+class AOBPRConfig(ModelConfig):
     def __init__(self,
                  lr=1e-2,
                  reg=5e-2,
@@ -37,7 +37,6 @@ class AOBPRConfig(Config):
         self.alpha: int = alpha
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -87,6 +86,7 @@ class AOBPR(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         return self.evaluator.evaluate(self, test_users)

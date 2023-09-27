@@ -15,7 +15,7 @@ import torch.nn.functional as F
 import torch.sparse as torch_sp
 from typing import Dict
 from .base import AbstractRecommender
-from ..utils.py import Config
+from ..utils.py import ModelConfig
 from ..utils.py import EarlyStopping
 from ..utils.py import BatchIterator
 from ..utils.torch import l2_loss, get_initializer, inner_product
@@ -25,7 +25,7 @@ from ..utils.py import randint_choice
 from ..run_config import RunConfig
 
 
-class CDAEConfig(Config):
+class CDAEConfig(ModelConfig):
     def __init__(self,
                  lr=0.001,
                  reg=0.001,
@@ -49,7 +49,6 @@ class CDAEConfig(Config):
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
-        self._validate()
 
     def _validate(self):
         assert isinstance(self.lr, float) and self.lr > 0
@@ -212,6 +211,7 @@ class CDAE(AbstractRecommender):
                 break
 
         self.logger.info("best:".ljust(12) + f"\t{early_stopping.best_result.values_str}")
+        return early_stopping.best_result
 
     def evaluate(self, test_users=None):
         self.cdae.eval()
