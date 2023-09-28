@@ -37,7 +37,7 @@ def main():
                 "sep": '\t',
                 "hyperopt": True,
                 "gpu_id": 0,
-                "metric": ("Recall", "NDCG", "Precision", "MAP"),
+                "metric": ("Precision", "Recall", "MAP", "NDCG"),
                 "top_k": (10, 20, 30, 40, 50),
                 "test_thread": 4,
                 "test_batch_size": 64,

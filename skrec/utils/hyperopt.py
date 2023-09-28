@@ -19,31 +19,31 @@ __all__ = ["HyperOpt"]
 class HyperOpt(object):
     def __init__(self, run_config: RunConfig, model_class, config_class, fixed_params):
         run_config.hyperopt = run_config.hyperopt and bool(config_class.param_space())
-        self.run_config = run_config
-        self.model_class = model_class
-        self.config_class = config_class
+        self._run_config = run_config
+        self._model_class = model_class
+        self._config_class = config_class
         self._fixed_params = fixed_params
         self._current_model: AbstractRecommender = None
         self._best_trial = None
         if run_config.hyperopt is False:
             return
 
-        self.param_space = {key: hp.choice(key, value) for key, value in config_class.param_space().items()}
-        self.num_combos = config_class.num_combos()
-        patience = max(int(self.num_combos / 2), 5)
-        self.early_stopping = EarlyStopping(metric="NDCG@10", patience=patience)
+        self._param_space = {key: hp.choice(key, value) for key, value in config_class.param_space().items()}
+        self._num_combos = config_class.num_combos()
+        self._patience = max(int(self._num_combos / 2), 10)
+        self._early_stopping = EarlyStopping(metric="NDCG@10", patience=self._patience)
 
-        self.dataset = RSDataset(run_config.data_dir, run_config.sep, run_config.file_column)
+        self._dataset = RSDataset(run_config.data_dir, run_config.sep, run_config.file_column)
         self.logger = self._create_logger()
 
     def _create_logger(self):
         timestamp = time.time()
-        param_str = f"{self.dataset.data_name}_{self.model_class.__name__}"
+        param_str = f"{self._dataset.data_name}_{self._model_class.__name__}"
         param_str = slugify(param_str, max_length=255 - 100)
         # run_id: data_name, model_name, timestamp
         run_id = f"hyperopt_{param_str}_{timestamp:.8f}"
 
-        log_dir = os.path.join("log", self.dataset.data_dir, self.model_class.__name__)
+        log_dir = os.path.join("log", self._dataset.data_dir, self._model_class.__name__)
         logger_name = os.path.join(log_dir, run_id + ".log")
         logger = Logger(logger_name)
 
@@ -52,9 +52,9 @@ class HyperOpt(object):
         logger.info(f"Server:\t{platform.node()}")
         logger.info(f"Workspace:\t{os.getcwd()}")
         logger.info(f"PID:\t{os.getpid()}")
-        logger.info(f"Model:\t{self.model_class.__module__}")
-        logger.info(f"Dataset:\t{os.path.abspath(self.dataset.data_dir)}")
-        logger.info("Hyper-Parameters Info:\t" + json.dumps(self.config_class.param_space()))
+        logger.info(f"Model:\t{self._model_class.__module__}")
+        logger.info(f"Dataset:\t{os.path.abspath(self._dataset.data_dir)}")
+        logger.info("Hyper-Parameters Info:\t" + json.dumps(self._config_class.param_space()))
         logger.info("")
 
         return logger
@@ -64,30 +64,33 @@ class HyperOpt(object):
         return deepcopy(self._fixed_params)
 
     def run(self):
-        if self.run_config.hyperopt is True:
+        if self._run_config.hyperopt is True:
             trials = Trials()
-            best = fmin(fn=self.objective, space=self.param_space, algo=tpe.suggest,
-                        max_evals=self.num_combos, trials=trials,
+            self.logger.info(f"Early stopping patience:\t{self._patience}")
+            self.logger.info(f"fmin max evals count:\t{self._num_combos}")
+            best = fmin(fn=self.objective, space=self._param_space, algo=tpe.suggest,
+                        max_evals=self._num_combos, trials=trials,
                         early_stop_fn=self.early_stop_fn, verbose=False)
-            self.logger.info("Best params:\t" + json.dumps(space_eval(self.param_space, best), default=str))
+            self.logger.info("Best params:\t" + json.dumps(space_eval(self._param_space, best), default=str))
             self.logger.info("\n\nBest results:")
             self.logger.info(self.trial2value(self._best_trial))
-            self.logger.info("\nDetailed results:\n" + json.dumps(self.early_stopping.best_result.results, default=str))
+            self.logger.info("\nDetailed results:\n" + json.dumps(self._early_stopping.best_result.results, default=str))
         else:
-            model: AbstractRecommender = self.model_class(self.run_config, self.fixed_params)
+            model: AbstractRecommender = self._model_class(self._run_config, self.fixed_params)
             logging.root.handlers = old_handlers
             model.fit()
 
     def objective(self, hp_params) -> float:
         model_params = self.fixed_params
         model_params.update(hp_params)
-        self._current_model: AbstractRecommender = self.model_class(self.run_config, model_params)
+        self._current_model: AbstractRecommender = self._model_class(self._run_config, model_params)
         logging.root.handlers = old_handlers
         result: MetricReport = self._current_model.fit()
-        if self.early_stopping(result):
-            return -10.0  # the value of metrics in IR cannot greater than 1.0.
+        loss = -result[self._early_stopping.key_metric]
+        if self._early_stopping(result):
+            return -10.0+loss  # the value of metrics in IR cannot greater than 1.0.
         else:
-            return -result[self.early_stopping.key_metric]
+            return loss
 
     def early_stop_fn(self, trials: Trials):
         latest = trials.trials[-1]
@@ -125,4 +128,4 @@ class HyperOpt(object):
         for k, v in list(vals.items()):
             if v:
                 rval[k] = v[0]
-        return space_eval(self.param_space, rval)
+        return space_eval(self._param_space, rval)
