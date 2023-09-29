@@ -123,7 +123,7 @@ def setup_package():
     include_dirs = get_include_dirs("skrec")
     module_list = cythonize(extensions, annotate=False)
 
-    install_requires = ["numpy>=1.17", "scipy", "pandas", "colorama"]
+    install_requires = ["numpy>=1.17", "scipy", "pandas", "colorama", "hyperopt"]
     metadata = dict(
         name="scikit-recommender",  # Replace with your own username
         version=VERSION,

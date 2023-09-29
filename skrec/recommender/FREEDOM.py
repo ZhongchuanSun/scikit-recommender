@@ -52,6 +52,13 @@ class FREEDOMConfig(ModelConfig):
         self.epochs: int = epochs
         self.early_stop: int = early_stop
 
+    @classmethod
+    def param_space(cls):
+        space = {"reg": [0.0, 1e-05, 1e-04, 1e-03],
+                 "dropout": [0.8, 0.9]
+                 }
+        return space
+
 
 class _FREEDOM(nn.Module):
     def __init__(self, config: FREEDOMConfig, dataset: RSDataset, device):

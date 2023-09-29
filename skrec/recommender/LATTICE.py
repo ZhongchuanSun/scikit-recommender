@@ -55,6 +55,13 @@ class LATTICEConfig(ModelConfig):
         self.epochs: int = epochs
         self.early_stop: int = early_stop
 
+    @classmethod
+    def param_space(cls):
+        space = {"lr": [0.0001, 0.0005, 0.001, 0.005],
+                 "reg": [0.0, 1e-05, 1e-04, 1e-03]
+                 }
+        return space
+
 
 def build_sim(context):
     context_norm = context.div(torch.norm(context, p=2, dim=-1, keepdim=True))

@@ -43,6 +43,14 @@ class LayerGCNConfig(ModelConfig):
         self.epochs: int = epochs
         self.early_stop: int = early_stop
 
+    @classmethod
+    def param_space(cls):
+        space = {"n_layers": [4],
+                 "reg": [1e-02, 1e-03, 1e-04, 1e-05],
+                 "dropout": [0.0, 0.1, 0.2]
+                 }
+        return space
+
 
 class L2Loss(nn.Module):
     def __init__(self):

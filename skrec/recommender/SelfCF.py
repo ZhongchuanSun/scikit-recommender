@@ -36,11 +36,19 @@ class SelfCFConfig(ModelConfig):
         self.reg: float = reg
         self.embed_dim: int = embed_dim
         self.n_layers: int = n_layers
-        self.dropout: float = dropout  # [0.3, 0.5]
+        self.dropout: float = dropout
 
         self.batch_size: int = batch_size
         self.epochs: int = epochs
         self.early_stop: int = early_stop
+
+    @classmethod
+    def param_space(cls):
+        space = {"n_layers": [2],
+                 "reg": [0.0],
+                 "dropout": [0.5]
+                 }
+        return space
 
 
 class L2Loss(nn.Module):

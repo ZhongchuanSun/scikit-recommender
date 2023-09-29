@@ -58,6 +58,15 @@ class SLMRecConfig(ModelConfig):
         self.epochs: int = epochs
         self.early_stop: int = early_stop
 
+    @classmethod
+    def param_space(cls):
+        space = {"lr": [0.0001, 0.001, 0.01, 0.1],
+                 "ssl_temp": [0.1, 0.2, 0.5, 1.0],
+                 "ssl_alpha": [0.01, 0.05, 0.1, 0.5, 1.0],
+                 "reg": [0.0001, 0.001, 0.01, 0.1]
+                 }
+        return space
+
 
 class _SLMRec(nn.Module):
     def __init__(self, config: SLMRecConfig, dataset: RSDataset, device):

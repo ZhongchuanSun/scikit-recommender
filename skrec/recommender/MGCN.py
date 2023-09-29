@@ -50,6 +50,12 @@ class MGCNConfig(ModelConfig):
         self.epochs: int = epochs
         self.early_stop: int = early_stop
 
+    @classmethod
+    def param_space(cls):
+        space = {"cl_loss": [0.001, 0.01, 0.1],
+                 }
+        return space
+
 
 def build_sim(context):
     context_norm = context.div(torch.norm(context, p=2, dim=-1, keepdim=True))

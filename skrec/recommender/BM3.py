@@ -46,6 +46,14 @@ class BM3Config(ModelConfig):
         self.epochs: int = epochs
         self.early_stop: int = early_stop
 
+    @classmethod
+    def param_space(cls):
+        space = {"n_layers": [1, 2],
+                 "reg": [0.1, 0.01],
+                 "dropout": [0.3, 0.5]
+                 }
+        return space
+
 
 class EmbLoss(nn.Module):
     """ EmbLoss, regularization on embeddings
