@@ -21,7 +21,7 @@ from ..utils.py import EarlyStopping
 from ..utils.py import pad_sequences
 from ..utils.tf1x import bpr_loss, l2_loss, l2_distance
 from ..io import SequentialPairwiseIterator
-from ..utils.common import normalize_adj_matrix
+from ..utils.common import normalize_adj_matrix, make_sure_dirs
 from ..run_config import RunConfig
 
 
@@ -148,8 +148,7 @@ class SGAT(AbstractRecommender):
             adj_mean_norm = sp.load_npz(adj_file)
         else:
             head_list, tail_list, user_list, rows_idx, edge_idx, sp_idx, adj_mean_norm = self._construct_graph()
-            if not os.path.exists(dir_name):
-                os.makedirs(dir_name)
+            make_sure_dirs(dir_name)
             np.save(elem_file, [head_list, tail_list, user_list])
             np.save(index_file, [rows_idx, edge_idx, sp_idx])
             sp.save_npz(adj_file, adj_mean_norm)

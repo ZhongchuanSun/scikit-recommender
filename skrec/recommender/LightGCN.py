@@ -21,7 +21,7 @@ from .base import AbstractRecommender
 from ..utils.torch import inner_product, bpr_loss, l2_loss, get_initializer
 from ..utils.py import EarlyStopping
 from ..io import PairwiseIterator
-from ..utils.common import normalize_adj_matrix
+from ..utils.common import normalize_adj_matrix, make_sure_dirs
 from ..utils.torch import sp_mat_to_sp_tensor
 from ..utils.py import ModelConfig
 from ..run_config import RunConfig
@@ -130,8 +130,7 @@ class LightGCN(AbstractRecommender):
     def _load_adj_mat(self, adj_type):
         output_dir = self.dataset.data_dir
         output_dir = os.path.join(output_dir, f"_{self.__class__.__name__}_data")
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        make_sure_dirs(output_dir)
         adj_mat_file = os.path.join(output_dir, f"{adj_type}_adj.npz")
         if os.path.exists(adj_mat_file):
             adj_matrix = sp.load_npz(adj_mat_file)

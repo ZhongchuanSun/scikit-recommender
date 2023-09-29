@@ -19,6 +19,7 @@ from . import modeling
 import tensorflow as tf
 from .bert4rec_utils import model_fn_builder, input_fn_builder, EvalHooks
 from ...run_config import RunConfig
+from skrec.utils.common import make_sure_dirs
 
 
 class BERT4RecConfig(ModelConfig):
@@ -125,8 +126,7 @@ class BERT4Rec(AbstractRecommender):
         timestamp = time.time()
         checkpoint_dir = os.path.join(self.dataset.data_dir, f"_{self.__class__.__name__}_ckpt_dir")
         checkpoint_dir = os.path.join(checkpoint_dir, f"{timestamp}")
-        if not os.path.isdir(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
+        make_sure_dirs(checkpoint_dir)
 
         num_instances_per_epoch = int(self.num_instances/(config.dupe_factor+1))
         self.steps_per_epoch = int(num_instances_per_epoch / config.batch_size)

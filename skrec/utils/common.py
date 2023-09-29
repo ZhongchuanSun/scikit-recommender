@@ -1,10 +1,11 @@
+import os
 import numpy as np
 import scipy.sparse as sp
 
 __author__ = "Zhongchuan Sun"
 __email__ = "zhongchuansun@gmail.com"
 
-__all__ = ["normalize_adj_matrix", "PostInitMeta"]
+__all__ = ["normalize_adj_matrix", "PostInitMeta", "make_sure_dirs"]
 
 
 def normalize_adj_matrix(sp_mat, norm_method="left"):
@@ -45,3 +46,11 @@ class PostInitMeta(type):
         if hasattr(obj, '__post_init__'):
             obj.__post_init__()
         return obj
+
+
+def make_sure_dirs(dir_path):
+    if not os.path.exists(dir_path):
+        try:
+            os.makedirs(dir_path)
+        except FileExistsError:
+            pass

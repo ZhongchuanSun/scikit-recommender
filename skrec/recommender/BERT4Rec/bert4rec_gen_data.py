@@ -10,6 +10,7 @@ import pickle
 import multiprocessing
 import time
 from ...io import RSDataset
+from skrec.utils.common import make_sure_dirs
 
 random_seed = 12345
 short_seq_prob = 0  # Probability of creating sequences which are shorter than the maximum length。
@@ -428,8 +429,7 @@ def main(config, dataset: RSDataset, output_dir: str, tf_record_name: str):
     sliding_step = config.sliding_step
     pool_size = config.pool_size
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    make_sure_dirs(output_dir)
 
     user_train = dataset.train_data.to_user_dict_by_time()
     user_train = {user: items.tolist() for user, items in user_train.items()}

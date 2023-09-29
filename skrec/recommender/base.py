@@ -14,6 +14,7 @@ from ..utils.py import Config, slugify
 from ..utils.py import MetricReport
 from ..run_config import RunConfig
 from ..utils.py import RankingEvaluator
+import skrec
 
 
 class AbstractRecommender(object):
@@ -47,6 +48,7 @@ class AbstractRecommender(object):
         logger.info(f"Server:\t{platform.node()}")
         logger.info(f"Workspace:\t{os.getcwd()}")
         logger.info(f"PID:\t{os.getpid()}")
+        logger.info(f"skrec version:\tv{skrec.__version__}")
         logger.info(f"Model:\t{self.__class__.__module__}")
 
         logger.info(f"\n{dataset.statistic_info}")

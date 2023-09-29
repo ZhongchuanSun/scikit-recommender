@@ -18,6 +18,7 @@ from skrec.utils.py import ModelConfig
 from skrec.io import RSDataset
 from skrec.io import PairwiseIterator
 from skrec.utils.py import EarlyStopping
+from skrec.utils.common import make_sure_dirs
 
 
 class FREEDOMConfig(ModelConfig):
@@ -95,8 +96,7 @@ class _FREEDOM(nn.Module):
         nn.init.xavier_uniform_(self.user_embedding.weight)
         nn.init.xavier_uniform_(self.item_id_embedding.weight)
 
-        if not os.path.exists(dataset.cache_dir):
-            os.makedirs(dataset.cache_dir)
+        make_sure_dirs(dataset.cache_dir)
         mm_adj_file = os.path.join(dataset.cache_dir, '_cache_mm_adj_freedomdsp_{}_{}.pt'.format(self.knn_k, int(10*self.mm_image_weight)))
 
         if self.v_feat is not None:

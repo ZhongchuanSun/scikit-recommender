@@ -7,6 +7,7 @@ import os
 import shutil
 from urllib import request
 from zipfile import ZipFile
+from skrec.utils.common import make_sure_dirs
 
 
 class MovieLens100k(object):
@@ -14,8 +15,7 @@ class MovieLens100k(object):
 
     @classmethod
     def download(cls, data_dir):
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
+        make_sure_dirs(data_dir)
 
         filepath = os.path.join(data_dir, cls.url.split("/")[-1])
         if not os.path.exists(filepath):

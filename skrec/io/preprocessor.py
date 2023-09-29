@@ -9,6 +9,7 @@ import pandas as pd
 from ..utils.py import typeassert
 from .logger import Logger
 from collections import OrderedDict
+from ..utils.common import make_sure_dirs
 
 
 class Preprocessor(object):
@@ -293,8 +294,7 @@ class Preprocessor(object):
         dir_path = save_dir if save_dir is not None else self._dir_path
         filename = f"{self._data_name}_{self._split_manner}_u{self._user_min}_i{self._item_min}"
         dir_path = os.path.join(dir_path, filename)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
+        make_sure_dirs(dir_path)
 
         # save data
         filename = os.path.join(dir_path, filename)

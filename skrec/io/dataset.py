@@ -17,7 +17,7 @@ import pandas as pd
 import scipy.sparse as sp
 import atexit
 from ..utils.py import pad_sequences
-from ..utils.common import PostInitMeta
+from ..utils.common import PostInitMeta, make_sure_dirs
 
 _USER = "user"
 _ITEM = "item"
@@ -317,8 +317,7 @@ class CacheOpt(metaclass=PostInitMeta):
     def _write_to_cache_file(self, cache_data):
         try:
             _cache_dir = os.path.dirname(self._cache_file)
-            if not os.path.exists(_cache_dir):
-                os.makedirs(_cache_dir)
+            make_sure_dirs(_cache_dir)
             with open(self._cache_file, 'wb') as fout:
                 pickle.dump(cache_data, fout)
         except Exception as e:

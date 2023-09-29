@@ -8,6 +8,7 @@ import os
 import re
 import logging
 from typing import Optional
+from skrec.utils.common import make_sure_dirs
 
 
 class RemoveColorFilter(logging.Filter):
@@ -48,8 +49,8 @@ class Logger(object):
 
         if filename is not None:
             dir_name = os.path.dirname(filename)
-            if dir_name and not os.path.exists(dir_name):
-                os.makedirs(dir_name)
+            if dir_name:
+                make_sure_dirs(dir_name)
 
             remove_color_filter = RemoveColorFilter()
             # write into file

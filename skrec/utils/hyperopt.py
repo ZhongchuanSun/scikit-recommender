@@ -11,6 +11,7 @@ from skrec.utils.py import slugify
 from hyperopt import fmin, tpe, hp, Trials, space_eval
 import json
 from skrec.io import Logger, RSDataset
+import skrec
 old_handlers = logging.root.handlers[:]
 
 __all__ = ["HyperOpt"]
@@ -52,6 +53,7 @@ class HyperOpt(object):
         logger.info(f"Server:\t{platform.node()}")
         logger.info(f"Workspace:\t{os.getcwd()}")
         logger.info(f"PID:\t{os.getpid()}")
+        logger.info(f"skrec version:\tv{skrec.__version__}")
         logger.info(f"Model:\t{self._model_class.__module__}")
         logger.info(f"Dataset:\t{os.path.abspath(self._dataset.data_dir)}")
         logger.info("Hyper-Parameters Info:\t" + json.dumps(self._config_class.param_space()))

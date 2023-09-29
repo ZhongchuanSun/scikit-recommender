@@ -18,6 +18,7 @@ from skrec.io import RSDataset
 from typing import Dict, List
 from skrec.io import PairwiseIterator
 from skrec.utils.py import EarlyStopping
+from skrec.utils.common import make_sure_dirs
 
 
 class MGCNConfig(ModelConfig):
@@ -139,8 +140,7 @@ class _MGCN(nn.Module):
         nn.init.xavier_uniform_(self.user_embedding.weight)
         nn.init.xavier_uniform_(self.item_id_embedding.weight)
 
-        if not os.path.exists(dataset.cache_dir):
-            os.makedirs(dataset.cache_dir)
+        make_sure_dirs(dataset.cache_dir)
 
         image_adj_file = os.path.join(dataset.cache_dir, 'image_mgcn_adj_{}_{}.pt'.format(self.knn_k, self.sparse))
         text_adj_file = os.path.join(dataset.cache_dir, 'text_mgcn_adj_{}_{}.pt'.format(self.knn_k, self.sparse))
