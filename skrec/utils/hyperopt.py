@@ -25,7 +25,7 @@ class HyperOpt(object):
         self._config_class = config_class
         self._fixed_params = fixed_params
         self._current_model: AbstractRecommender = None
-        self._best_trial = None
+        self._best_trial_str = None
         if run_config.hyperopt is False:
             return
 
@@ -75,7 +75,7 @@ class HyperOpt(object):
                         early_stop_fn=self.early_stop_fn, verbose=False)
             self.logger.info("Best params:\t" + json.dumps(space_eval(self._param_space, best), default=str))
             self.logger.info("\n\nBest results:")
-            self.logger.info(self.trial2value(self._best_trial))
+            self.logger.info(self._best_trial_str)
             self.logger.info("\nDetailed results:\n" + json.dumps(self._early_stopping.best_result.results, default=str))
         else:
             model: AbstractRecommender = self._model_class(self._run_config, self.fixed_params)
@@ -101,7 +101,7 @@ class HyperOpt(object):
         self.logger.info(self.trial2value(latest))
         stopped = latest["result"]["loss"] < -1.01
         if not stopped:
-            self._best_trial = trials.best_trial
+            self._best_trial_str = self.trial2value(trials.best_trial)
         return stopped, []  # the value of metrics in IR cannot greater than 1.0.
 
     def trial2title(self, trial: Dict) -> str:

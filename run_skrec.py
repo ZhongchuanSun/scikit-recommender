@@ -29,13 +29,25 @@ def _set_random_seed(seed=2020):
         pass
 
 
+def list_gpus():
+    import torch
+    gpu_str = list()
+    gpu_str.append(torch.cuda.is_available())  # 查看是否有可用GPU
+    gpu_str.append(torch.cuda.device_count())  # 查看GPU数量
+    for i in range(torch.cuda.device_count()):
+        gpu_str.append(torch.cuda.get_device_capability(i))  # 查看指定GPU容量
+        gpu_str.append(torch.cuda.get_device_name(i))  # 查看指定GPU名称
+        gpu_str.append(torch.cuda.get_device_properties(i))  # i为第几张卡，显示该卡的详细信息
+    return "\n".join([str(s) for s in gpu_str])
+
+
 def main():
     # read config
-    run_dict = {"recommender": "BPRMF",
-                "data_dir": "dataset_mm/baby",
+    run_dict = {"recommender": "MGCN",
+                "data_dir": "dataset_mm/elec",
                 "file_column": "UIRT",
                 "sep": '\t',
-                "hyperopt": True,
+                "hyperopt": False,
                 "gpu_id": 0,
                 "metric": ("Precision", "Recall", "MAP", "NDCG"),
                 "top_k": (10, 20, 30, 40, 50),
@@ -62,10 +74,11 @@ def main():
     model_params = merge_config_with_cmd_args(model_params)
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(run_config.gpu_id)
-    os.environ['ROCR_VISIBLE_DEVICES'] = str(run_config.gpu_id)
+    # os.environ['ROCR_VISIBLE_DEVICES'] = str(run_config.gpu_id)
     _set_random_seed(run_config.seed)
 
     hyperopt = HyperOpt(run_config, model_class, config_class, model_params)
+    # print(list_gpus())
     hyperopt.run()
 
 
